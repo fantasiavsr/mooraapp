@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Moora Decision Making</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css"
+    />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.21.1/babel.min.js"></script>
+    <script type="text/babel">
+      const { useState } = React;
+
+      const FormulaPage = () => {
+        return (
+          <div>
+            <h2 className="mb-4">Rumus Moora</h2>
+            <p>
+              Rumus Moora digunakan untuk menghitung perankingan alternatif
+              berdasarkan bobot kriteria dan nilai alternatif. Berikut adalah
+              langkah-langkah dalam perhitungan Moora:
+            </p>
+            <ol>
+              <li>
+                <strong>Normalisasi Matriks:</strong>
+                <p>
+                  Untuk setiap kriteria, hitung nilai normalisasi alternatif
+                  dengan menggunakan rumus:
+                </p>
+                <pre>normalizedValue = value / sqrt(sum of squares)</pre>
+              </li>
+              <li>
+                <strong>Perhitungan Nilai Optimasi:</strong>
+                <p>
+                  Untuk setiap alternatif, hitung nilai optimasi dengan
+                  menggunakan rumus:
+                </p>
+                <pre>
+                  optimizationValue = (weight * (alternativeValue - minValue)) /
+                  (maxValue - minValue)
+                </pre>
+              </li>
+              <li>
+                <strong>Perankingan Alternatif:</strong>
+                <p>
+                  Jumlahkan nilai optimasi untuk setiap alternatif dan urutkan
+                  alternatif berdasarkan skor tertinggi.
+                </p>
+              </li>
+              <li>
+                <strong>Sumber:</strong>
+                <p>
+                  <a
+                    href="https://extra.cahyadsn.com/moora"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Multi-Objective Optimization on the basis of Ratio Analysis
+                  </a>
+                </p>
+              </li>
+            </ol>
+          </div>
+        );
+      };
+
+      const HowToPage = () => {
+        return (
+          <div>
+            <h2 className="mb-4">Cara Penggunaan</h2>
+            <ol>
+              <li>
+                Generate data alternatif terlebih dahulu dengan mengklik tombol
+                "Generate Alternatif".
+              </li>
+              <li>
+                Isi bobot kriteria dengan nilai antara 0 dan 1. Setidaknya satu
+                bobot harus diisi dan tidak boleh 0.
+              </li>
+              <li>
+                Setelah mengisi bobot kriteria, klik tombol "Hitung" untuk
+                menghitung perankingan alternatif.
+              </li>
+              <li>
+                Hasil perankingan alternatif akan ditampilkan dalam tabel dengan
+                alternatif yang memiliki skor tertinggi berada di posisi atas.
+              </li>
+            </ol>
+            <p>
+              <strong>Catatan:</strong> Pastikan untuk mengisi semua kriteria
+              dengan benar dan mempertimbangkan kebutuhan dan preferensi Anda
+              saat memberikan bobot.
+            </p>
+          </div>
+        );
+      };
+
+      const CriteriaPage = ({
+        criteria,
+        weights,
+        handleWeightChange,
+        handleSubmit,
+      }) => {
+        return (
+          <div>
+            <h2 className="mb-4">Bobot Kriteria</h2>
+            <form onSubmit={handleSubmit}>
+              {criteria.map((criterion, index) => (
+                <div key={index} className="mb-3">
+                  <label htmlFor={criterion.name} className="form-label">
+                    {criterion.label}
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="1"
+                    step="0.001"
+                    id={criterion.name}
+                    name={criterion.name}
+                    className="form-control"
+                    value={weights[criterion.name] || ""}
+                    onChange={handleWeightChange}
+                  />
+                </div>
+              ))}
+              <button type="submit" className="btn btn-primary">
+                Hitung
+              </button>
+            </form>
+          </div>
+        );
+      };
+
+      const AlternativesPage = ({
+        alternatives,
+        handleGenerateAlternatives,
+        criteria,
+      }) => {
+        return (
+          <div>
+            <h2 className="mb-4">Data Alternatif</h2>
+            {alternatives.length > 0 ? (
+              <table className="table table-striped">
+                <thead>
+                  <tr>
+                    <th>No.</th>
+                    <th>Nama Alternatif</th>
+                    {criteria.map((criterion, index) => (
+                      <th key={index}>{criterion.label}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {alternatives.map((alternative, index) => (
+                    <tr key={index}>
+                      <td>{index + 1}</td>
+                      <td>{alternative.name}</td>
+                      {criteria.map((criterion, i) => (
+                        <td key={i}>
+                          {alternative[criterion.name].toFixed(4)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p>
+                Belum ada data alternatif. Silakan klik tombol "Generate
+                Alternatif".
+              </p>
+            )}
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={handleGenerateAlternatives}
+            >
+              Generate Alternatif
+            </button>
+          </div>
+        );
+      };
+
+      const RankingsPage = ({ result }) => {
+        return (
+          <div>
+            <h2 className="mb-4">Hasil Perankingan Alternatif</h2>
+            {result.length > 0 ? (
+              <table className="table table-striped">
+                <thead>
+                  <tr>
+                    <th>No.</th>
+                    <th>Alternatif</th>
+                    <th>Skor</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {result.map((ranking, index) => (
+                    <tr key={index}>
+                      <td>{index + 1}</td>
+                      <td>{ranking.alternative}</td>
+                      <td>{ranking.score.toFixed(4)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p>Belum ada hasil perankingan.</p>
+            )}
+          </div>
+        );
+      };
+
+      const MooraApp = () => {
+        const criteria = [
+          { name: "lokasi", label: "Lokasi yang Strategis" },
+          { name: "jenisBarang", label: "Jenis Barang yang Dijual" },
+          { name: "kualitasLayanan", label: "Kualitas Layanan" },
+          { name: "kebersihan", label: "Kebersihan" },
+          { name: "keamanan", label: "Keamanan" },
+          { name: "ketersediaanParkir", label: "Ketersediaan Parkir" },
+          { name: "banyaknyaPembayaran", label: "Banyaknya Metode Pembayaran" },
+          { name: "jarakRumah", label: "Jarak dari Rumah" },
+          { name: "pajakPpn", label: "Pajak PPN" },
+          { name: "hargaParkir", label: "Harga Parkir" },
+        ];
+
+        const [weights, setWeights] = useState({});
+        const [result, setResult] = useState([]);
+        const [alternatives, setAlternatives] = useState([]);
+        const [currentPage, setCurrentPage] = useState("criteria");
+
+        const handleWeightChange = (e) => {
+          const { name, value } = e.target;
+          setWeights({ ...weights, [name]: value });
+        };
+
+        const handleSubmit = (e) => {
+          e.preventDefault();
+
+          // check if alternative data is already generated
+          if (alternatives.length === 0) {
+            alert("Silakan generate data alternatif terlebih dahulu!");
+            return;
+          }
+
+          // Check if at least one weight is filled and not 0
+          const areWeightsComplete = criteria.some(
+            (criterion) =>
+              weights[criterion.name] !== undefined &&
+              weights[criterion.name] !== 0 &&
+              weights[criterion.name] !== "0"
+          );
+
+          if (!areWeightsComplete) {
+            alert(
+              "Silakan isi bobot kriteria dahulu! (minimal 1) dan tidak boleh 0"
+            );
+            return;
+          }
+
+          const normalizedMatrix = calculateNormalizedMatrix();
+          const optimizationValues =
+            calculateOptimizationValues(normalizedMatrix);
+          const rankings = calculateRankings(optimizationValues);
+
+          setResult(rankings);
+          setCurrentPage("rankings");
+        };
+
+        const handleGenerateAlternatives = () => {
+          const generatedAlternatives = generateAlternatives();
+          setAlternatives(generatedAlternatives);
+          setCurrentPage("alternatives");
+        };
+
+        const handleNavigationClick = (page) => {
+          setCurrentPage(page);
+        };
+
+        function generateAlternatives() {
+          const alternativeNames = [
+            "Alfamart",
+            "Alfamidi",
+            "Indomart",
+            "Yogya Group",
+            "Ranch Market",
+            "Superindo",
+            "Carrefour",
+          ];
+
+          const generatedAlternatives = [];
+
+          for (let i = 0; i < 20; i++) {
+            const alternative = {};
+
+            for (const criterion of criteria) {
+              alternative[criterion.name] = Math.random() * (0.8 - 0.2) + 0.2;
+            }
+
+            const alternativeName =
+              alternativeNames[
+                Math.floor(Math.random() * alternativeNames.length)
+              ];
+            let suffix = "";
+            let duplicateCount = 0;
+
+            while (true) {
+              const duplicateNames = generatedAlternatives.filter(
+                (alt) => alt.name === alternativeName + suffix
+              );
+
+              if (duplicateNames.length === 0) {
+                if (duplicateCount === 0) {
+                  alternative.name = alternativeName;
+                } else {
+                  alternative.name =
+                    alternativeName + " " + (duplicateCount + 1);
+                }
+                break;
+              }
+
+              duplicateCount++;
+              suffix = " " + (duplicateCount + 1);
+            }
+
+            generatedAlternatives.push(alternative);
+          }
+
+          return generatedAlternatives;
+        }
+
+        function calculateNormalizedMatrix() {
+          const normalizedMatrix = [];
+
+          for (const criterion of criteria) {
+            const values = alternatives.map(
+              (alternative) => alternative[criterion.name]
+            );
+            const sumOfSquares = values.reduce((acc, val) => acc + val ** 2, 0);
+            const sqrtSumOfSquares = Math.sqrt(sumOfSquares);
+            const normalizedValues = values.map(
+              (val) => val / sqrtSumOfSquares
+            );
+
+            normalizedMatrix.push(normalizedValues);
+          }
+
+          return normalizedMatrix;
+        }
+
+        function calculateOptimizationValues(normalizedMatrix) {
+          const optimizationValues = [];
+
+          for (const alternative of alternatives) {
+            const values = [];
+
+            for (let i = 0; i < criteria.length; i++) {
+              const criterion = criteria[i];
+              const weightsValue = weights[criterion.name] || 0;
+              const maxValue = Math.max(...normalizedMatrix[i]);
+              const minValue = Math.min(...normalizedMatrix[i]);
+
+              const optimizationValue =
+                (weightsValue * (alternative[criterion.name] - minValue)) /
+                (maxValue - minValue);
+              values.push(optimizationValue);
+            }
+
+            optimizationValues.push(values);
+          }
+
+          return optimizationValues;
+        }
+
+        function calculateRankings(optimizationValues) {
+          const rankings = optimizationValues.map((values, index) => ({
+            alternative: alternatives[index].name,
+            score: values.reduce((acc, val) => acc + val, 0),
+          }));
+
+          rankings.sort((a, b) => b.score - a.score);
+
+          return rankings;
+        }
+
+        const getPageContent = () => {
+          switch (currentPage) {
+            case "formula":
+              return <FormulaPage />;
+            case "howto":
+              return <HowToPage />;
+            case "criteria":
+              return (
+                <CriteriaPage
+                  criteria={criteria}
+                  weights={weights}
+                  handleWeightChange={handleWeightChange}
+                  handleSubmit={handleSubmit}
+                />
+              );
+            case "alternatives":
+              return (
+                <AlternativesPage
+                  alternatives={alternatives}
+                  handleGenerateAlternatives={handleGenerateAlternatives}
+                  criteria={criteria}
+                />
+              );
+            case "rankings":
+              return <RankingsPage result={result} />;
+            default:
+              return null;
+          }
+        };
+
+        return (
+          <div className="container py-5 ">
+            <nav className="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+              <div className="container-fluid">
+                <a className="navbar-brand" href="#">
+                  Moora App
+                </a>
+                <button
+                  className="navbar-toggler"
+                  type="button"
+                  data-bs-toggle="collapse"
+                  data-bs-target="#navbarNav"
+                  aria-controls="navbarNav"
+                  aria-expanded="false"
+                  aria-label="Toggle navigation"
+                >
+                  <span className="navbar-toggler-icon"></span>
+                </button>
+                <div className="collapse navbar-collapse" id="navbarNav">
+                  <ul className="navbar-nav">
+                    <li className="nav-item">
+                      <button
+                        className={`nav-link btn ${
+                          currentPage === "formula" ? "active" : ""
+                        }`}
+                        onClick={() => handleNavigationClick("formula")}
+                      >
+                        Rumus Moora
+                      </button>
+                    </li>
+                    <li className="nav-item">
+                      <button
+                        className={`nav-link btn ${
+                          currentPage === "howto" ? "active" : ""
+                        }`}
+                        onClick={() => handleNavigationClick("howto")}
+                      >
+                        Cara Penggunaan
+                      </button>
+                    </li>
+                    <li className="nav-item">
+                      <button
+                        className={`nav-link btn ${
+                          currentPage === "criteria" ? "active" : ""
+                        }`}
+                        onClick={() => handleNavigationClick("criteria")}
+                      >
+                        Bobot Kriteria
+                      </button>
+                    </li>
+                    <li className="nav-item">
+                      <button
+                        className={`nav-link btn ${
+                          currentPage === "alternatives" ? "active" : ""
+                        }`}
+                        onClick={() => handleNavigationClick("alternatives")}
+                      >
+                        Data Alternatif
+                      </button>
+                    </li>
+                    <li className="nav-item">
+                      <button
+                        className={`nav-link btn ${
+                          currentPage === "rankings" ? "active" : ""
+                        }`}
+                        onClick={() => handleNavigationClick("rankings")}
+                      >
+                        Hasil Ranking
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </nav>
+
+            {getPageContent()}
+          </div>
+        );
+      };
+
+      ReactDOM.createRoot(document.getElementById("root")).render(<MooraApp />);
+    </script>
+  </body>
+</html>
