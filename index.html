@@ -163,11 +163,24 @@
                     <tr key={index}>
                       <td>{index + 1}</td>
                       <td>{alternative.name}</td>
-                      {criteria.map((criterion, i) => (
-                        <td key={i}>
-                          {alternative[criterion.name].toFixed(4)}
-                        </td>
-                      ))}
+                      {criteria.map((criterion, i) => {
+                        const maxValue = Math.max(
+                          ...alternatives.map((alt) => alt[criterion.name])
+                        );
+                        const value = alternative[criterion.name];
+                        const isMaxValue = value === maxValue;
+
+                        return (
+                          <td
+                            key={i}
+                            style={{
+                              fontWeight: isMaxValue ? "bold" : "normal",
+                            }}
+                          >
+                            {value.toFixed(4)}
+                          </td>
+                        );
+                      })}
                     </tr>
                   ))}
                 </tbody>
@@ -237,9 +250,21 @@
                 {normalizedMatrix.map((row, rowIndex) => (
                   <tr key={rowIndex}>
                     <td>Alternatif {rowIndex + 1}</td>
-                    {row.map((value, columnIndex) => (
-                      <td key={columnIndex}>{value.toFixed(4)}</td>
-                    ))}
+                    {row.map((value, columnIndex) => {
+                      const maxValue = Math.max(
+                        ...normalizedMatrix.map((row) => row[columnIndex])
+                      );
+                      const isMaxValue = value === maxValue;
+
+                      return (
+                        <td
+                          key={columnIndex}
+                          style={{ fontWeight: isMaxValue ? "bold" : "normal" }}
+                        >
+                          {value.toFixed(4)}
+                        </td>
+                      );
+                    })}
                   </tr>
                 ))}
               </tbody>
@@ -263,12 +288,26 @@
                 </tr>
               </thead>
               <tbody>
-                {optimizationValues.map((alternative, index) => (
-                  <tr key={index}>
-                    <td>Alternatif {index + 1}</td>
-                    {alternative.map((value, index) => (
-                      <td key={index}>{value.toFixed(4)}</td>
-                    ))}
+                {optimizationValues.map((alternative, alternativeIndex) => (
+                  <tr key={alternativeIndex}>
+                    <td>Alternatif {alternativeIndex + 1}</td>
+                    {alternative.map((value, columnIndex) => {
+                      const maxValue = Math.max(
+                        ...optimizationValues
+                          .map((alternative) => alternative[columnIndex])
+                          .filter((val) => val > 0)
+                      );
+                      const isMaxValue = value === maxValue && maxValue > 0;
+
+                      return (
+                        <td
+                          key={columnIndex}
+                          style={{ fontWeight: isMaxValue ? "bold" : "normal" }}
+                        >
+                          {value.toFixed(4)}
+                        </td>
+                      );
+                    })}
                   </tr>
                 ))}
               </tbody>
@@ -398,49 +437,51 @@
 
         function calculateNormalizedMatrix() {
           const normalizedMatrix = [];
-        
+
           for (let i = 0; i < alternatives.length; i++) {
             const values = [];
-        
+
             for (let j = 0; j < criteria.length; j++) {
               const criterion = criteria[j];
               const value = alternatives[i][criterion.name];
               values.push(value);
             }
-        
+
             const sumOfSquares = values.reduce((acc, val) => acc + val ** 2, 0);
             const sqrtSumOfSquares = Math.sqrt(sumOfSquares);
-            const normalizedValues = values.map((val) => val / sqrtSumOfSquares);
-        
+            const normalizedValues = values.map(
+              (val) => val / sqrtSumOfSquares
+            );
+
             normalizedMatrix.push(normalizedValues);
           }
-        
+
           return normalizedMatrix;
         }
 
         function calculateOptimizationValues(normalizedMatrix) {
           const optimizationValues = [];
-        
+
           for (const alternative of alternatives) {
             const values = [];
-        
+
             for (let i = 0; i < criteria.length; i++) {
               const criterion = criteria[i];
               const weightsValue = weights[criterion.name] || 0;
               const normalizedValues = normalizedMatrix[i];
-        
+
               const maxValue = Math.max(...normalizedValues);
               const minValue = Math.min(...normalizedValues);
-        
+
               const optimizationValue =
                 (weightsValue * (alternative[criterion.name] - minValue)) /
                 (maxValue - minValue);
               values.push(optimizationValue);
             }
-        
+
             optimizationValues.push(values);
           }
-        
+
           return optimizationValues;
         }
 
