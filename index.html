@@ -177,7 +177,7 @@
                               fontWeight: isMaxValue ? "bold" : "normal",
                             }}
                           >
-                            {value.toFixed(4)}
+                            {value.toFixed(0)}
                           </td>
                         );
                       })}
@@ -393,48 +393,45 @@
             "Superindo",
             "Carrefour",
           ];
-
+        
           const generatedAlternatives = [];
-
+        
           for (let i = 0; i < 20; i++) {
             const alternative = {};
-
+        
             for (const criterion of criteria) {
-              alternative[criterion.name] = Math.random() * (0.8 - 0.2) + 0.2;
+              alternative[criterion.name] = Math.floor(Math.random() * 10) + 1;
             }
-
+        
             const alternativeName =
-              alternativeNames[
-                Math.floor(Math.random() * alternativeNames.length)
-              ];
+              alternativeNames[Math.floor(Math.random() * alternativeNames.length)];
             let suffix = "";
             let duplicateCount = 0;
-
+        
             while (true) {
               const duplicateNames = generatedAlternatives.filter(
                 (alt) => alt.name === alternativeName + suffix
               );
-
+        
               if (duplicateNames.length === 0) {
                 if (duplicateCount === 0) {
                   alternative.name = alternativeName;
                 } else {
-                  alternative.name =
-                    alternativeName + " " + (duplicateCount + 1);
+                  alternative.name = alternativeName + " " + (duplicateCount + 1);
                 }
                 break;
               }
-
+        
               duplicateCount++;
               suffix = " " + (duplicateCount + 1);
             }
-
+        
             generatedAlternatives.push(alternative);
           }
-
+        
           return generatedAlternatives;
         }
-
+        
         function calculateNormalizedMatrix() {
           const normalizedMatrix = [];
 
@@ -461,29 +458,39 @@
 
         function calculateOptimizationValues(normalizedMatrix) {
           const optimizationValues = [];
-
+        
           for (const alternative of alternatives) {
             const values = [];
-
+        
             for (let i = 0; i < criteria.length; i++) {
               const criterion = criteria[i];
               const weightsValue = weights[criterion.name] || 0;
               const normalizedValues = normalizedMatrix[i];
-
+        
               const maxValue = Math.max(...normalizedValues);
               const minValue = Math.min(...normalizedValues);
-
-              const optimizationValue =
-                (weightsValue * (alternative[criterion.name] - minValue)) /
-                (maxValue - minValue);
+        
+              let optimizationValue;
+        
+              if (criterion.name === "jarakRumah" || criterion.name === "pajakPpn" || criterion.name === "hargaParkir") {
+                optimizationValue =
+                  (weightsValue * (maxValue - alternative[criterion.name])) /
+                  (maxValue - minValue);
+              } else {
+                optimizationValue =
+                  (weightsValue * (alternative[criterion.name] - minValue)) /
+                  (maxValue - minValue);
+              }
+        
               values.push(optimizationValue);
             }
-
+        
             optimizationValues.push(values);
           }
-
+        
           return optimizationValues;
         }
+        
 
         function calculateRankings(optimizationValues) {
           const rankings = optimizationValues.map((values, index) => ({
