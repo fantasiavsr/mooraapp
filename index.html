@@ -219,6 +219,64 @@
         );
       };
 
+      const NormalizationPage = ({ normalizedMatrix }) => {
+        return (
+          <div>
+            <h2>Hasil Normalisasi</h2>
+            <table className="table table-striped">
+              <thead>
+                <tr>
+                  <th>Alternatif</th>
+                  {normalizedMatrix.length > 0 &&
+                    normalizedMatrix[0].map((_, index) => (
+                      <th key={index}>Kriteria {index + 1}</th>
+                    ))}
+                </tr>
+              </thead>
+              <tbody>
+                {normalizedMatrix.map((row, rowIndex) => (
+                  <tr key={rowIndex}>
+                    <td>Alternatif {rowIndex + 1}</td>
+                    {row.map((value, columnIndex) => (
+                      <td key={columnIndex}>{value.toFixed(4)}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+      };
+
+      const OptimizationPage = ({ optimizationValues }) => {
+        return (
+          <div>
+            <h2>Hasil Optimasi</h2>
+            <table className="table table-striped">
+              <thead>
+                <tr>
+                  <th>Alternatif</th>
+                  {optimizationValues.length > 0 &&
+                    optimizationValues[0].map((_, index) => (
+                      <th key={index}>Kriteria {index + 1}</th>
+                    ))}
+                </tr>
+              </thead>
+              <tbody>
+                {optimizationValues.map((alternative, index) => (
+                  <tr key={index}>
+                    <td>Alternatif {index + 1}</td>
+                    {alternative.map((value, index) => (
+                      <td key={index}>{value.toFixed(4)}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+      };
+
       const MooraApp = () => {
         const criteria = [
           { name: "lokasi", label: "Lokasi yang Strategis" },
@@ -236,7 +294,7 @@
         const [weights, setWeights] = useState({});
         const [result, setResult] = useState([]);
         const [alternatives, setAlternatives] = useState([]);
-        const [currentPage, setCurrentPage] = useState("criteria");
+        const [currentPage, setCurrentPage] = useState("alternatives");
 
         const handleWeightChange = (e) => {
           const { name, value } = e.target;
@@ -340,44 +398,49 @@
 
         function calculateNormalizedMatrix() {
           const normalizedMatrix = [];
-
-          for (const criterion of criteria) {
-            const values = alternatives.map(
-              (alternative) => alternative[criterion.name]
-            );
+        
+          for (let i = 0; i < alternatives.length; i++) {
+            const values = [];
+        
+            for (let j = 0; j < criteria.length; j++) {
+              const criterion = criteria[j];
+              const value = alternatives[i][criterion.name];
+              values.push(value);
+            }
+        
             const sumOfSquares = values.reduce((acc, val) => acc + val ** 2, 0);
             const sqrtSumOfSquares = Math.sqrt(sumOfSquares);
-            const normalizedValues = values.map(
-              (val) => val / sqrtSumOfSquares
-            );
-
+            const normalizedValues = values.map((val) => val / sqrtSumOfSquares);
+        
             normalizedMatrix.push(normalizedValues);
           }
-
+        
           return normalizedMatrix;
         }
 
         function calculateOptimizationValues(normalizedMatrix) {
           const optimizationValues = [];
-
+        
           for (const alternative of alternatives) {
             const values = [];
-
+        
             for (let i = 0; i < criteria.length; i++) {
               const criterion = criteria[i];
               const weightsValue = weights[criterion.name] || 0;
-              const maxValue = Math.max(...normalizedMatrix[i]);
-              const minValue = Math.min(...normalizedMatrix[i]);
-
+              const normalizedValues = normalizedMatrix[i];
+        
+              const maxValue = Math.max(...normalizedValues);
+              const minValue = Math.min(...normalizedValues);
+        
               const optimizationValue =
                 (weightsValue * (alternative[criterion.name] - minValue)) /
                 (maxValue - minValue);
               values.push(optimizationValue);
             }
-
+        
             optimizationValues.push(values);
           }
-
+        
           return optimizationValues;
         }
 
@@ -414,6 +477,16 @@
                   handleGenerateAlternatives={handleGenerateAlternatives}
                   criteria={criteria}
                 />
+              );
+            case "normalization":
+              const normalizedMatrix = calculateNormalizedMatrix();
+              return <NormalizationPage normalizedMatrix={normalizedMatrix} />;
+            case "optimization":
+              const optimizationValues = calculateOptimizationValues(
+                calculateNormalizedMatrix()
+              );
+              return (
+                <OptimizationPage optimizationValues={optimizationValues} />
               );
             case "rankings":
               return <RankingsPage result={result} />;
@@ -465,6 +538,16 @@
                     <li className="nav-item">
                       <button
                         className={`nav-link btn ${
+                          currentPage === "alternatives" ? "active" : ""
+                        }`}
+                        onClick={() => handleNavigationClick("alternatives")}
+                      >
+                        Data Alternatif
+                      </button>
+                    </li>
+                    <li className="nav-item">
+                      <button
+                        className={`nav-link btn ${
                           currentPage === "criteria" ? "active" : ""
                         }`}
                         onClick={() => handleNavigationClick("criteria")}
@@ -475,11 +558,21 @@
                     <li className="nav-item">
                       <button
                         className={`nav-link btn ${
-                          currentPage === "alternatives" ? "active" : ""
+                          currentPage === "normalization" ? "active" : ""
                         }`}
-                        onClick={() => handleNavigationClick("alternatives")}
+                        onClick={() => handleNavigationClick("normalization")}
                       >
-                        Data Alternatif
+                        Normalisasi
+                      </button>
+                    </li>
+                    <li className="nav-item">
+                      <button
+                        className={`nav-link btn ${
+                          currentPage === "optimization" ? "active" : ""
+                        }`}
+                        onClick={() => handleNavigationClick("optimization")}
+                      >
+                        Optimasi
                       </button>
                     </li>
                     <li className="nav-item">

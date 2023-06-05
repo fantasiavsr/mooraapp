@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Moora Decision Making</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css"
+    />
+    <!-- bootstrap script -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.21.1/babel.min.js"></script>
+    <script type="text/babel">
+      const { useState } = React;
+
+      const FormulaPage = () => {
+        // return ..
+      };
+
+      const HowToPage = () => {
+        // return ..
+      };
+
+      const CriteriaPage = ({
+        criteria,
+        weights,
+        handleWeightChange,
+        handleSubmit,
+      }) => {
+        // return ..
+      };
+
+      const AlternativesPage = ({
+        alternatives,
+        handleGenerateAlternatives,
+        criteria,
+      }) => {
+        // return ..
+      };
+
+      const RankingsPage = ({ result }) => {
+        // return ..
+      };
+
+      const MooraApp = () => {
+        const criteria = [
+          { name: "lokasi", label: "Lokasi yang Strategis" },
+          { name: "jenisBarang", label: "Jenis Barang yang Dijual" },
+          { name: "kualitasLayanan", label: "Kualitas Layanan" },
+         // etc ..
+        ];
+
+        const [weights, setWeights] = useState({});
+        const [result, setResult] = useState([]);
+        const [alternatives, setAlternatives] = useState([]);
+        const [currentPage, setCurrentPage] = useState("alternatives");
+
+        const handleWeightChange = (e) => {
+          const { name, value } = e.target;
+          setWeights({ ...weights, [name]: value });
+        };
+
+        const handleSubmit = (e) => {
+          e.preventDefault();
+
+          // check if alternative data is already generated
+          if (alternatives.length === 0) {
+            alert("Silakan generate data alternatif terlebih dahulu!");
+            return;
+          }
+
+          // Check if at least one weight is filled and not 0
+          const areWeightsComplete = criteria.some(
+            (criterion) =>
+              weights[criterion.name] !== undefined &&
+              weights[criterion.name] !== 0 &&
+              weights[criterion.name] !== "0"
+          );
+
+          if (!areWeightsComplete) {
+            alert(
+              "Silakan isi bobot kriteria dahulu! (minimal 1) dan tidak boleh 0"
+            );
+            return;
+          }
+
+          const normalizedMatrix = calculateNormalizedMatrix();
+          const optimizationValues =
+            calculateOptimizationValues(normalizedMatrix);
+          const rankings = calculateRankings(optimizationValues);
+
+          setResult(rankings);
+          setCurrentPage("rankings");
+        };
+
+        const handleGenerateAlternatives = () => {
+          const generatedAlternatives = generateAlternatives();
+          setAlternatives(generatedAlternatives);
+          setCurrentPage("alternatives");
+        };
+
+        const handleNavigationClick = (page) => {
+          setCurrentPage(page);
+        };
+
+        function generateAlternatives() {
+          const alternativeNames = [
+            "Alfamart",
+            "Alfamidi",
+            // etc ..
+          ];
+
+          const generatedAlternatives = [];
+
+          for (let i = 0; i < 20; i++) {
+            const alternative = {};
+
+            for (const criterion of criteria) {
+              alternative[criterion.name] = Math.random() * (0.8 - 0.2) + 0.2;
+            }
+
+            const alternativeName =
+              alternativeNames[
+                Math.floor(Math.random() * alternativeNames.length)
+              ];
+            let suffix = "";
+            let duplicateCount = 0;
+
+            while (true) {
+              const duplicateNames = generatedAlternatives.filter(
+                (alt) => alt.name === alternativeName + suffix
+              );
+
+              if (duplicateNames.length === 0) {
+                if (duplicateCount === 0) {
+                  alternative.name = alternativeName;
+                } else {
+                  alternative.name =
+                    alternativeName + " " + (duplicateCount + 1);
+                }
+                break;
+              }
+
+              duplicateCount++;
+              suffix = " " + (duplicateCount + 1);
+            }
+
+            generatedAlternatives.push(alternative);
+          }
+
+          return generatedAlternatives;
+        }
+
+        function calculateNormalizedMatrix() {
+          const normalizedMatrix = [];
+
+          for (const criterion of criteria) {
+            const values = alternatives.map(
+              (alternative) => alternative[criterion.name]
+            );
+            const sumOfSquares = values.reduce((acc, val) => acc + val ** 2, 0);
+            const sqrtSumOfSquares = Math.sqrt(sumOfSquares);
+            const normalizedValues = values.map(
+              (val) => val / sqrtSumOfSquares
+            );
+
+            normalizedMatrix.push(normalizedValues);
+          }
+
+          return normalizedMatrix;
+        }
+
+        function calculateOptimizationValues(normalizedMatrix) {
+          const optimizationValues = [];
+
+          for (const alternative of alternatives) {
+            const values = [];
+
+            for (let i = 0; i < criteria.length; i++) {
+              const criterion = criteria[i];
+              const weightsValue = weights[criterion.name] || 0;
+              const maxValue = Math.max(...normalizedMatrix[i]);
+              const minValue = Math.min(...normalizedMatrix[i]);
+
+              const optimizationValue =
+                (weightsValue * (alternative[criterion.name] - minValue)) /
+                (maxValue - minValue);
+              values.push(optimizationValue);
+            }
+
+            optimizationValues.push(values);
+          }
+
+          return optimizationValues;
+        }
+
+        function calculateRankings(optimizationValues) {
+          const rankings = optimizationValues.map((values, index) => ({
+            alternative: alternatives[index].name,
+            score: values.reduce((acc, val) => acc + val, 0),
+          }));
+
+          rankings.sort((a, b) => b.score - a.score);
+
+          return rankings;
+        }
+
+        const getPageContent = () => {
+          switch (currentPage) {
+            case "formula":
+              return <FormulaPage />;
+            case "howto":
+              return <HowToPage />;
+            case "criteria":
+              return (
+                <CriteriaPage
+                  criteria={criteria}
+                  weights={weights}
+                  handleWeightChange={handleWeightChange}
+                  handleSubmit={handleSubmit}
+                />
+              );
+            case "alternatives":
+              return (
+                <AlternativesPage
+                  alternatives={alternatives}
+                  handleGenerateAlternatives={handleGenerateAlternatives}
+                  criteria={criteria}
+                />
+              );
+            case "rankings":
+              return <RankingsPage result={result} />;
+            default:
+              return null;
+          }
+        };
+
+        return (
+          <div className="container py-5 ">
+            <nav className="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+              <!-- nav ... -->
+            </nav>
+
+            {getPageContent()}
+          </div>
+        );
+      };
+
+      ReactDOM.createRoot(document.getElementById("root")).render(<MooraApp />);
+    </script>
+  </body>
+</html>
