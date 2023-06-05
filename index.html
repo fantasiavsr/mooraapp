@@ -35,17 +35,24 @@
                   Untuk setiap kriteria, hitung nilai normalisasi alternatif
                   dengan menggunakan rumus:
                 </p>
-                <pre>normalizedValue = value / sqrt(sum of squares)</pre>
+                <pre className="text-primary">
+                  normalizedValue = value / sqrt(sum of squares)
+                </pre>
               </li>
               <li>
                 <strong>Perhitungan Nilai Optimasi:</strong>
+                <p>Jika kriteria berupa benefit, gunakan rumus berikut:</p>
+                <pre className="text-primary">
+                  optimizationValue = (weight * (alternative[criterion.name] -
+                  minValue)) / (maxValue - minValue)
+                </pre>
                 <p>
-                  Untuk setiap alternatif, hitung nilai optimasi dengan
-                  menggunakan rumus:
+                  Jika kriteria berupa cost seperti "jarakRumah", "pajakPpn",
+                  atau "hargaParkir", gunakan rumus berikut:
                 </p>
-                <pre>
-                  optimizationValue = (weight * (alternativeValue - minValue)) /
-                  (maxValue - minValue)
+                <pre className="text-primary">
+                  optimizationValue = (weight * (maxValue -
+                  alternative[criterion.name])) / (maxValue - minValue)
                 </pre>
               </li>
               <li>
@@ -62,6 +69,7 @@
                     href="https://extra.cahyadsn.com/moora"
                     target="_blank"
                     rel="noreferrer"
+                    className="text-primary"
                   >
                     Multi-Objective Optimization on the basis of Ratio Analysis
                   </a>
@@ -169,7 +177,7 @@
                         );
                         const value = alternative[criterion.name];
                         const isMaxValue = value === maxValue;
-
+      
                         return (
                           <td
                             key={i}
@@ -177,7 +185,15 @@
                               fontWeight: isMaxValue ? "bold" : "normal",
                             }}
                           >
-                            {value.toFixed(0)}
+                            {criterion.name === "ketersediaanParkir" ? (
+                              value === 1 ? (
+                                <span>ada</span>
+                              ) : (
+                                <span>tidak ada</span>
+                              )
+                            ) : (
+                              value
+                            )}
                           </td>
                         );
                       })}
@@ -187,8 +203,7 @@
               </table>
             ) : (
               <p>
-                Belum ada data alternatif. Silakan klik tombol "Generate
-                Alternatif".
+                Belum ada data alternatif. Silakan klik tombol "Generate Alternatif".
               </p>
             )}
             <button
@@ -399,9 +414,16 @@
           for (let i = 0; i < 20; i++) {
             const alternative = {};
         
-            for (const criterion of criteria) {
-              alternative[criterion.name] = Math.floor(Math.random() * 10) + 1;
-            }
+            alternative["lokasi"] = Math.floor(Math.random() * 10) + 1;
+            alternative["jenisBarang"] = Math.floor(Math.random() * 1000) + 1;
+            alternative["kualitasLayanan"] = Math.floor(Math.random() * 10) + 1;
+            alternative["kebersihan"] = Math.floor(Math.random() * 10) + 1;
+            alternative["keamanan"] = Math.floor(Math.random() * 10) + 1;
+            alternative["ketersediaanParkir"] = Math.round(Math.random());
+            alternative["banyaknyaPembayaran"] = Math.floor(Math.random() * 10) + 1;
+            alternative["jarakRumah"] = Math.floor(Math.random() * 50) + 1;
+            alternative["pajakPpn"] = [1000, 1500, 2000, 2500, 3000, 3500][Math.floor(Math.random() * 6)];
+            alternative["hargaParkir"] = [1000, 2000, 3000][Math.floor(Math.random() * 3)];
         
             const alternativeName =
               alternativeNames[Math.floor(Math.random() * alternativeNames.length)];
@@ -432,6 +454,7 @@
           return generatedAlternatives;
         }
         
+
         function calculateNormalizedMatrix() {
           const normalizedMatrix = [];
 
@@ -458,21 +481,25 @@
 
         function calculateOptimizationValues(normalizedMatrix) {
           const optimizationValues = [];
-        
+
           for (const alternative of alternatives) {
             const values = [];
-        
+
             for (let i = 0; i < criteria.length; i++) {
               const criterion = criteria[i];
               const weightsValue = weights[criterion.name] || 0;
               const normalizedValues = normalizedMatrix[i];
-        
+
               const maxValue = Math.max(...normalizedValues);
               const minValue = Math.min(...normalizedValues);
-        
+
               let optimizationValue;
-        
-              if (criterion.name === "jarakRumah" || criterion.name === "pajakPpn" || criterion.name === "hargaParkir") {
+
+              if (
+                criterion.name === "jarakRumah" ||
+                criterion.name === "pajakPpn" ||
+                criterion.name === "hargaParkir"
+              ) {
                 optimizationValue =
                   (weightsValue * (maxValue - alternative[criterion.name])) /
                   (maxValue - minValue);
@@ -481,16 +508,15 @@
                   (weightsValue * (alternative[criterion.name] - minValue)) /
                   (maxValue - minValue);
               }
-        
+
               values.push(optimizationValue);
             }
-        
+
             optimizationValues.push(values);
           }
-        
+
           return optimizationValues;
         }
-        
 
         function calculateRankings(optimizationValues) {
           const rankings = optimizationValues.map((values, index) => ({
