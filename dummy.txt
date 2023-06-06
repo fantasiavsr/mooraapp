@@ -8,70 +8,510 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css"
     />
+    <!-- bootstrap script -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
   </head>
   <body>
     <div id="root"></div>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.21.1/babel.min.js"></script>
-
     <script type="text/babel">
       const { useState } = React;
 
+      const FormulaPage = () => {
+        return (
+          <div>
+            <h2 className="mb-4">Rumus Moora</h2>
+            <p>
+              Rumus Moora digunakan untuk menghitung perankingan alternatif
+              berdasarkan bobot kriteria dan nilai alternatif. Berikut adalah
+              langkah-langkah dalam perhitungan Moora:
+            </p>
+            <ol>
+              <li>
+                <strong>Normalisasi Matriks:</strong>
+                <p>
+                  Untuk setiap kriteria, hitung nilai normalisasi alternatif
+                  dengan menggunakan rumus:
+                </p>
+                <pre className="text-primary">
+                  normalizedValue = value / sqrt(sum of squares)
+                </pre>
+              </li>
+              <li>
+                <strong>Perhitungan Nilai Optimasi:</strong>
+                <p>Jika kriteria berupa benefit, gunakan rumus berikut:</p>
+                <pre className="text-primary">
+                  optimizationValue = (weight * (alternative[criterion.name] -
+                  minValue)) / (maxValue - minValue)
+                </pre>
+                <p>
+                  Jika kriteria berupa cost seperti "jarakRumah", "pajakPpn",
+                  atau "hargaParkir", gunakan rumus berikut:
+                </p>
+                <pre className="text-primary">
+                  optimizationValue = (weight * (maxValue -
+                  alternative[criterion.name])) / (maxValue - minValue)
+                </pre>
+              </li>
+              <li>
+                <strong>Perankingan Alternatif:</strong>
+                <p>
+                  Jumlahkan nilai optimasi untuk setiap alternatif dan urutkan
+                  alternatif berdasarkan skor tertinggi.
+                </p>
+              </li>
+              <li>
+                <strong>Sumber:</strong>
+                <p>
+                  <a
+                    href="https://extra.cahyadsn.com/moora"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-primary"
+                  >
+                    Multi-Objective Optimization on the basis of Ratio Analysis
+                  </a>
+                </p>
+              </li>
+            </ol>
+          </div>
+        );
+      };
+
+      const HowToPage = () => {
+        return (
+          <div>
+            <h2 className="mb-4">Cara Penggunaan</h2>
+            <ol>
+              <li>
+                Generate data alternatif terlebih dahulu dengan mengklik tombol
+                "Generate Alternatif".
+              </li>
+              <li>
+                Isi bobot kriteria dengan nilai antara 0 dan 1. Setidaknya satu
+                bobot harus diisi dan tidak boleh 0.
+              </li>
+              <li>
+                Setelah mengisi bobot kriteria, klik tombol "Hitung" untuk
+                menghitung perankingan alternatif.
+              </li>
+              <li>
+                Hasil perankingan alternatif akan ditampilkan dalam tabel dengan
+                alternatif yang memiliki skor tertinggi berada di posisi atas.
+              </li>
+            </ol>
+            <p>
+              <strong>Catatan:</strong> Pastikan untuk mengisi semua kriteria
+              dengan benar dan mempertimbangkan kebutuhan dan preferensi Anda
+              saat memberikan bobot.
+            </p>
+          </div>
+        );
+      };
+
+      const CriteriaPage = ({
+        criteria,
+        weights,
+        handleWeightChange,
+        handleSubmit,
+      }) => {
+        return (
+          <div>
+            <h2 className="mb-4">Bobot Kriteria</h2>
+            <form onSubmit={handleSubmit}>
+              {criteria.map((criterion, index) => (
+                <div key={index} className="mb-3">
+                  <label htmlFor={criterion.name} className="form-label">
+                    {criterion.label}
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="1"
+                    step="0.001"
+                    id={criterion.name}
+                    name={criterion.name}
+                    className="form-control"
+                    value={weights[criterion.name] || ""}
+                    onChange={handleWeightChange}
+                  />
+                </div>
+              ))}
+              <button type="submit" className="btn btn-primary">
+                Hitung
+              </button>
+            </form>
+          </div>
+        );
+      };
+
+      const AlternativesPage = ({
+        alternatives,
+        handleGenerateAlternatives,
+        criteria,
+        handleChangeValue,
+        handleChangeAlternativeName,
+        handleChangeParkingAvailability,
+      }) => {
+        const handleValueChange = (e, alternativeIndex, criterionIndex) => {
+          const { value } = e.target;
+          handleChangeValue(alternativeIndex, criterionIndex, value);
+        };
+      
+        const handleAlternativeNameChange = (e, alternativeIndex) => {
+          const { value } = e.target;
+          handleChangeAlternativeName(alternativeIndex, value);
+        };
+      
+        const handleParkingAvailabilityChange = (e, alternativeIndex) => {
+          const { value } = e.target;
+          handleChangeParkingAvailability(alternativeIndex, value);
+        };
+      
+        return (
+          <div>
+            <h2 className="mb-4">Data Alternatif</h2>
+            {alternatives.length > 0 ? (
+              <table className="table table-striped table-responsive">
+                <thead>
+                  <tr>
+                    <th>No.</th>
+                    <th>Nama Alternatif</th>
+                    {criteria.map((criterion, index) => {
+                      if (criterion.name === "ketersediaanParkir") {
+                        return (
+                          <th key={index}>
+                            {criterion.label}
+                          </th>
+                        );
+                      }
+                      return (
+                        <React.Fragment key={index}>
+                          <th>{criterion.label}</th>
+                        </React.Fragment>
+                      );
+                    })}
+                  </tr>
+                </thead>
+                <tbody>
+                  {alternatives.map((alternative, alternativeIndex) => (
+                    <tr key={alternativeIndex}>
+                      <td>{alternativeIndex + 1}</td>
+                      <td>
+                        <input
+                          type="text"
+                          value={alternative.name}
+                          onChange={(e) =>
+                            handleAlternativeNameChange(e, alternativeIndex)
+                          }
+                        />
+                      </td>
+                      {criteria.map((criterion, criterionIndex) => {
+                        if (criterion.name === "ketersediaanParkir") {
+                          return (
+                            <td key={criterionIndex}>
+                              <select
+                                value={alternative.ketersediaanParkir}
+                                onChange={(e) =>
+                                  handleParkingAvailabilityChange(
+                                    e,
+                                    alternativeIndex
+                                  )
+                                }
+                              >
+                                <option value={1}>Ada</option>
+                                <option value={0}>Tidak Ada</option>
+                              </select>
+                            </td>
+                          );
+                        }
+                        const maxValue = Math.max(
+                          ...alternatives.map((alt) => alt[criterion.name])
+                        );
+                        const value = alternative[criterion.name];
+                        const isMaxValue = value === maxValue;
+      
+                        return (
+                          <td
+                            key={criterionIndex}
+                            style={{
+                              fontWeight: isMaxValue ? "bold" : "normal",
+                            }}
+                          >
+                            <input
+                              type="number"
+                              value={value}
+                              onChange={(e) =>
+                                handleValueChange(
+                                  e,
+                                  alternativeIndex,
+                                  criterionIndex
+                                )
+                              }
+                              style={{ width: "60px" }}
+                            />
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p>
+                Belum ada data alternatif. Silakan klik tombol "Generate Alternatif".
+              </p>
+            )}
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={handleGenerateAlternatives}
+            >
+              Generate Alternatif
+            </button>
+          </div>
+        );
+      };      
+
+      const RankingsPage = ({ result }) => {
+        return (
+          <div>
+            <h2 className="mb-4">Hasil Perankingan Alternatif</h2>
+            {result.length > 0 ? (
+              <table className="table table-striped">
+                <thead>
+                  <tr>
+                    <th>No.</th>
+                    <th>Alternatif</th>
+                    <th>Skor</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {result.map((ranking, index) => (
+                    <tr key={index}>
+                      <td>{index + 1}</td>
+                      <td>{ranking.alternative}</td>
+                      <td>{ranking.score.toFixed(4)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p>Belum ada hasil perankingan.</p>
+            )}
+          </div>
+        );
+      };
+
+      const NormalizationPage = ({ normalizedMatrix }) => {
+        return (
+          <div>
+            <h2>Hasil Normalisasi</h2>
+            <table className="table table-striped">
+              <thead>
+                <tr>
+                  <th>Alternatif</th>
+                  {normalizedMatrix.length > 0 &&
+                    normalizedMatrix[0].map((_, index) => (
+                      <th key={index}>Kriteria {index + 1}</th>
+                    ))}
+                </tr>
+              </thead>
+              <tbody>
+                {normalizedMatrix.map((row, rowIndex) => (
+                  <tr key={rowIndex}>
+                    <td>Alternatif {rowIndex + 1}</td>
+                    {row.map((value, columnIndex) => {
+                      const maxValue = Math.max(
+                        ...normalizedMatrix.map((row) => row[columnIndex])
+                      );
+                      const isMaxValue = value === maxValue;
+
+                      return (
+                        <td
+                          key={columnIndex}
+                          style={{ fontWeight: isMaxValue ? "bold" : "normal" }}
+                        >
+                          {value.toFixed(4)}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+      };
+
+      const OptimizationPage = ({ optimizationValues }) => {
+        return (
+          <div>
+            <h2>Hasil Optimasi</h2>
+            <table className="table table-striped">
+              <thead>
+                <tr>
+                  <th>Alternatif</th>
+                  {optimizationValues.length > 0 &&
+                    optimizationValues[0].map((_, index) => (
+                      <th key={index}>Kriteria {index + 1}</th>
+                    ))}
+                </tr>
+              </thead>
+              <tbody>
+                {optimizationValues.map((alternative, alternativeIndex) => (
+                  <tr key={alternativeIndex}>
+                    <td>Alternatif {alternativeIndex + 1}</td>
+                    {alternative.map((value, columnIndex) => {
+                      const maxValue = Math.max(
+                        ...optimizationValues
+                          .map((alternative) => alternative[columnIndex])
+                          .filter((val) => val > 0)
+                      );
+                      const isMaxValue = value === maxValue && maxValue > 0;
+
+                      return (
+                        <td
+                          key={columnIndex}
+                          style={{ fontWeight: isMaxValue ? "bold" : "normal" }}
+                        >
+                          {value.toFixed(4)}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+      };
+
       const MooraApp = () => {
         const criteria = [
-          { name: 'lokasi', label: 'Lokasi yang Strategis' },
-          { name: 'jenisBarang', label: 'Jenis Barang yang Dijual' },
-          { name: 'kualitasLayanan', label: 'Kualitas Layanan' },
-          { name: 'kebersihan', label: 'Kebersihan' },
-          { name: 'keamanan', label: 'Keamanan' },
-          { name: 'ketersediaanParkir', label: 'Ketersediaan Parkir' },
-          { name: 'banyaknyaPembayaran', label: 'Banyaknya Metode Pembayaran' },
-          { name: 'jarakRumah', label: 'Jarak dari Rumah' },
-          { name: 'pajakPpn', label: 'Pajak PPN' },
-          { name: 'hargaParkir', label: 'Harga Parkir' },
+          { name: "lokasi", label: "Lokasi yang Strategis" },
+          { name: "jenisBarang", label: "Jenis Barang yang Dijual" },
+          { name: "kualitasLayanan", label: "Kualitas Layanan" },
+          { name: "kebersihan", label: "Kebersihan" },
+          { name: "keamanan", label: "Keamanan" },
+          { name: "ketersediaanParkir", label: "Ketersediaan Parkir" },
+          { name: "banyaknyaPembayaran", label: "Banyaknya Metode Pembayaran" },
+          { name: "jarakRumah", label: "Jarak dari Rumah" },
+          { name: "pajakPpn", label: "Pajak PPN" },
+          { name: "hargaParkir", label: "Harga Parkir" },
         ];
 
         const [weights, setWeights] = useState({});
         const [result, setResult] = useState([]);
         const [alternatives, setAlternatives] = useState([]);
+        const [currentPage, setCurrentPage] = useState("alternatives");
 
         const handleWeightChange = (e) => {
           const { name, value } = e.target;
           setWeights({ ...weights, [name]: value });
         };
 
-        const handleGenerateAlternatives = () => {
-          const generatedAlternatives = generateAlternatives();
-          setAlternatives(generatedAlternatives);
-          setResult([]);
-        };
-
         const handleSubmit = (e) => {
           e.preventDefault();
 
-          const allWeightsFilled = criteria.every((criterion) => weights[criterion.name]);
-          if (!allWeightsFilled) {
-            alert('Harap isi semua bobot kriteria sebelum melakukan perhitungan.');
+          // check if alternative data is already generated
+          if (alternatives.length === 0) {
+            alert("Silakan generate data alternatif terlebih dahulu!");
+            return;
+          }
+
+          // Check if at least one weight is filled and not 0
+          const areWeightsComplete = criteria.some(
+            (criterion) =>
+              weights[criterion.name] !== undefined &&
+              weights[criterion.name] !== 0 &&
+              weights[criterion.name] !== "0"
+          );
+
+          if (!areWeightsComplete) {
+            alert(
+              "Silakan isi bobot kriteria dahulu! (minimal 1) dan tidak boleh 0"
+            );
             return;
           }
 
           const normalizedMatrix = calculateNormalizedMatrix();
-          const optimizationValues = calculateOptimizationValues(normalizedMatrix);
+          const optimizationValues =
+            calculateOptimizationValues(normalizedMatrix);
           const rankings = calculateRankings(optimizationValues);
 
           setResult(rankings);
+          setCurrentPage("rankings");
+        };
+
+        const handleGenerateAlternatives = () => {
+          const generatedAlternatives = generateAlternatives();
+          setAlternatives(generatedAlternatives);
+          setCurrentPage("alternatives");
+        };
+
+        const handleNavigationClick = (page) => {
+          setCurrentPage(page);
         };
 
         function generateAlternatives() {
+          const alternativeNames = [
+            "Alfamart",
+            "Alfamidi",
+            "Indomart",
+            "Yogya Group",
+            "Ranch Market",
+            "Superindo",
+            "Carrefour",
+          ];
+
           const generatedAlternatives = [];
 
           for (let i = 0; i < 20; i++) {
             const alternative = {};
 
-            for (const criterion of criteria) {
-              alternative[criterion.name] = Math.random() * (0.8 - 0.2) + 0.2;
+            alternative["lokasi"] = Math.floor(Math.random() * 10) + 1;
+            alternative["jenisBarang"] = Math.floor(Math.random() * 1000) + 1;
+            alternative["kualitasLayanan"] = Math.floor(Math.random() * 10) + 1;
+            alternative["kebersihan"] = Math.floor(Math.random() * 10) + 1;
+            alternative["keamanan"] = Math.floor(Math.random() * 10) + 1;
+            alternative["ketersediaanParkir"] = Math.round(Math.random());
+            alternative["banyaknyaPembayaran"] =
+              Math.floor(Math.random() * 10) + 1;
+            alternative["jarakRumah"] = Math.floor(Math.random() * 50) + 1;
+            alternative["pajakPpn"] = [1000, 1500, 2000, 2500, 3000, 3500][
+              Math.floor(Math.random() * 6)
+            ];
+            alternative["hargaParkir"] = [1000, 2000, 3000][
+              Math.floor(Math.random() * 3)
+            ];
+
+            const alternativeName =
+              alternativeNames[
+                Math.floor(Math.random() * alternativeNames.length)
+              ];
+            let suffix = "";
+            let duplicateCount = 0;
+
+            while (true) {
+              const duplicateNames = generatedAlternatives.filter(
+                (alt) => alt.name === alternativeName + suffix
+              );
+
+              if (duplicateNames.length === 0) {
+                if (duplicateCount === 0) {
+                  alternative.name = alternativeName;
+                } else {
+                  alternative.name =
+                    alternativeName + " " + (duplicateCount + 1);
+                }
+                break;
+              }
+
+              duplicateCount++;
+              suffix = " " + (duplicateCount + 1);
             }
 
             generatedAlternatives.push(alternative);
@@ -80,26 +520,54 @@
           return generatedAlternatives;
         }
 
+        const handleChangeValue = (alternativeIndex, criterionIndex, value) => {
+          const updatedAlternatives = [...alternatives];
+          updatedAlternatives[alternativeIndex][criteria[criterionIndex].name] =
+            Number(value);
+          setAlternatives(updatedAlternatives);
+        };
+
+        const handleChangeAlternativeName = (alternativeIndex, name) => {
+          const updatedAlternatives = [...alternatives];
+          updatedAlternatives[alternativeIndex].name = name;
+          setAlternatives(updatedAlternatives);
+        };
+
+        const handleChangeParkingAvailability = (
+          alternativeIndex,
+          availability
+        ) => {
+          const updatedAlternatives = [...alternatives];
+          updatedAlternatives[alternativeIndex].ketersediaanParkir =
+            Number(availability);
+          setAlternatives(updatedAlternatives);
+        };
+
         function calculateNormalizedMatrix() {
           const normalizedMatrix = [];
 
+          // Mengiterasi setiap alternatif
           for (let i = 0; i < alternatives.length; i++) {
-            const alternative = alternatives[i];
-            const sumOfSquares = criteria.reduce((sum, criterion) => {
-              const value = alternative[criterion.name];
-              return sum + value ** 2;
-            }, 0);
+            const values = [];
 
-            const sqrtSumOfSquares = Math.sqrt(sumOfSquares);
-
-            const normalizedAlternative = {};
-
-            for (const criterion of criteria) {
-              const value = alternative[criterion.name];
-              normalizedAlternative[criterion.name] = value / sqrtSumOfSquares;
+            // Mengiterasi setiap kriteria
+            for (let j = 0; j < criteria.length; j++) {
+              const criterion = criteria[j];
+              const value = alternatives[i][criterion.name];
+              values.push(value);
             }
 
-            normalizedMatrix.push(normalizedAlternative);
+            // Menghitung sum of squares untuk normalisasi
+            const sumOfSquares = values.reduce((acc, val) => acc + val ** 2, 0);
+            const sqrtSumOfSquares = Math.sqrt(sumOfSquares);
+
+            // Melakukan normalisasi nilai-nilai kriteria
+            const normalizedValues = values.map(
+              (val) => val / sqrtSumOfSquares
+            );
+
+            // Menyimpan nilai-nilai yang telah dinormalisasi ke dalam matriks
+            normalizedMatrix.push(normalizedValues);
           }
 
           return normalizedMatrix;
@@ -108,125 +576,205 @@
         function calculateOptimizationValues(normalizedMatrix) {
           const optimizationValues = [];
 
-          for (let i = 0; i < normalizedMatrix.length; i++) {
-            const alternative = normalizedMatrix[i];
+          // Mengiterasi setiap alternatif
+          for (const alternative of alternatives) {
+            const values = [];
 
-            const maxValues = criteria.reduce((max, criterion) => {
-              const value = alternative[criterion.name];
-              return { ...max, [criterion.name]: value > max[criterion.name] ? value : max[criterion.name] };
-            }, {});
+            // Mengiterasi setiap kriteria
+            for (let i = 0; i < criteria.length; i++) {
+              const criterion = criteria[i];
+              const weightsValue = weights[criterion.name] || 0;
+              const normalizedValues = normalizedMatrix[i];
 
-            const minValues = criteria.reduce((min, criterion) => {
-              const value = alternative[criterion.name];
-              return { ...min, [criterion.name]: value < min[criterion.name] ? value : min[criterion.name] };
-            }, {});
+              // Menghitung nilai maksimum dan minimum dari normalisasi
+              const maxValue = Math.max(...normalizedValues);
+              const minValue = Math.min(...normalizedValues);
 
-            const optimizationValue = criteria.reduce((sum, criterion) => {
-              const weight = weights[criterion.name];
-              const max = maxValues[criterion.name];
-              const min = minValues[criterion.name];
-              return sum + weight * (max - min);
-            }, 0);
+              let optimizationValue;
 
-            optimizationValues.push(optimizationValue);
+              // Menggunakan rumus optimasi berdasarkan jenis kriteria (benefit atau cost)
+              if (
+                criterion.name === "jarakRumah" ||
+                criterion.name === "pajakPpn" ||
+                criterion.name === "hargaParkir"
+              ) {
+                optimizationValue =
+                  (weightsValue * (maxValue - alternative[criterion.name])) /
+                  (maxValue - minValue);
+              } else {
+                optimizationValue =
+                  (weightsValue * (alternative[criterion.name] - minValue)) /
+                  (maxValue - minValue);
+              }
+
+              // Menyimpan nilai optimasi ke dalam array
+              values.push(optimizationValue);
+            }
+
+            // Menyimpan array nilai optimasi untuk setiap alternatif
+            optimizationValues.push(values);
           }
 
           return optimizationValues;
         }
 
         function calculateRankings(optimizationValues) {
-          const rankings = optimizationValues.map((value, index) => ({ alternative: index + 1, score: value }));
+          const rankings = optimizationValues.map((values, index) => ({
+            alternative: alternatives[index].name,
+            score: values.reduce((acc, val) => acc + val, 0),
+          }));
 
           rankings.sort((a, b) => b.score - a.score);
 
           return rankings;
         }
 
+        const getPageContent = () => {
+          switch (currentPage) {
+            case "formula":
+              return <FormulaPage />;
+            case "howto":
+              return <HowToPage />;
+            case "criteria":
+              return (
+                <CriteriaPage
+                  criteria={criteria}
+                  weights={weights}
+                  handleWeightChange={handleWeightChange}
+                  handleSubmit={handleSubmit}
+                />
+              );
+            case "alternatives":
+              return (
+                <AlternativesPage
+                  alternatives={alternatives}
+                  handleGenerateAlternatives={handleGenerateAlternatives}
+                  criteria={criteria}
+                  handleChangeValue={handleChangeValue} // Menambahkan prop handleChangeValue
+                  handleChangeAlternativeName={handleChangeAlternativeName} // Menambahkan prop handleChangeAlternativeName
+                  handleChangeParkingAvailability={
+                    handleChangeParkingAvailability
+                  } // Menambahkan prop handleChangeParkingAvailability
+                />
+              );
+            case "normalization":
+              const normalizedMatrix = calculateNormalizedMatrix();
+              return <NormalizationPage normalizedMatrix={normalizedMatrix} />;
+            case "optimization":
+              const optimizationValues = calculateOptimizationValues(
+                calculateNormalizedMatrix()
+              );
+              return (
+                <OptimizationPage optimizationValues={optimizationValues} />
+              );
+            case "rankings":
+              return <RankingsPage result={result} />;
+            default:
+              return null;
+          }
+        };
+
         return (
-          <div className="container">
-            <h1>Aplikasi Pengambilan Keputusan Moora</h1>
-            <form onSubmit={handleSubmit}>
-              <div className="row">
-                <div className="col-md-2">
-                  <h2>Bobot Kriteria</h2>
-                  {criteria.map((criterion, index) => (
-                    <div key={index} className="mb-3">
-                      <label htmlFor={criterion.name} className="form-label">
-                        {criterion.label}
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        max="1"
-                        step="0.1"
-                        id={criterion.name}
-                        name={criterion.name}
-                        className="form-control"
-                        value={weights[criterion.name] || ''}
-                        onChange={handleWeightChange}
-                      />
-                    </div>
-                  ))}
-                  <button type="button" className="btn btn-secondary" onClick={handleGenerateAlternatives}>
-                    Generate Alternatives
-                  </button>
-                  <button type="submit" className="btn btn-primary" disabled={alternatives.length === 0}>
-                    Hitung
-                  </button>
-                </div>
-                <div className="col-md-6">
-                  <h2>Data Alternatif</h2>
-                  <table className="table">
-                    <thead>
-                      <tr>
-                        <th>No.</th>
-                        {criteria.map((criterion, index) => (
-                          <th key={index}>{criterion.name}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {alternatives.map((alternative, index) => (
-                        <tr key={index}>
-                          <td>{index + 1}</td>
-                          {criteria.map((criterion, i) => (
-                            <td key={i}>{alternative[criterion.name].toFixed(4)}</td>
-                          ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+          <div className="container py-5 ">
+            <nav className="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+              <div className="container-fluid">
+                <a className="navbar-brand" href="#">
+                  Moora App
+                </a>
+                <button
+                  className="navbar-toggler"
+                  type="button"
+                  data-bs-toggle="collapse"
+                  data-bs-target="#navbarNav"
+                  aria-controls="navbarNav"
+                  aria-expanded="false"
+                  aria-label="Toggle navigation"
+                >
+                  <span className="navbar-toggler-icon"></span>
+                </button>
+                <div className="collapse navbar-collapse" id="navbarNav">
+                  <ul className="navbar-nav">
+                    <li className="nav-item">
+                      <button
+                        className={`nav-link btn ${
+                          currentPage === "formula" ? "active" : ""
+                        }`}
+                        onClick={() => handleNavigationClick("formula")}
+                      >
+                        Rumus Moora
+                      </button>
+                    </li>
+                    <li className="nav-item">
+                      <button
+                        className={`nav-link btn ${
+                          currentPage === "howto" ? "active" : ""
+                        }`}
+                        onClick={() => handleNavigationClick("howto")}
+                      >
+                        Cara Penggunaan
+                      </button>
+                    </li>
+                    <li className="nav-item">
+                      <button
+                        className={`nav-link btn ${
+                          currentPage === "alternatives" ? "active" : ""
+                        }`}
+                        onClick={() => handleNavigationClick("alternatives")}
+                      >
+                        Data Alternatif
+                      </button>
+                    </li>
+                    <li className="nav-item">
+                      <button
+                        className={`nav-link btn ${
+                          currentPage === "criteria" ? "active" : ""
+                        }`}
+                        onClick={() => handleNavigationClick("criteria")}
+                      >
+                        Bobot Kriteria
+                      </button>
+                    </li>
+                    <li className="nav-item">
+                      <button
+                        className={`nav-link btn ${
+                          currentPage === "normalization" ? "active" : ""
+                        }`}
+                        onClick={() => handleNavigationClick("normalization")}
+                      >
+                        Normalisasi
+                      </button>
+                    </li>
+                    <li className="nav-item">
+                      <button
+                        className={`nav-link btn ${
+                          currentPage === "optimization" ? "active" : ""
+                        }`}
+                        onClick={() => handleNavigationClick("optimization")}
+                      >
+                        Optimasi
+                      </button>
+                    </li>
+                    <li className="nav-item">
+                      <button
+                        className={`nav-link btn ${
+                          currentPage === "rankings" ? "active" : ""
+                        }`}
+                        onClick={() => handleNavigationClick("rankings")}
+                      >
+                        Hasil Ranking
+                      </button>
+                    </li>
+                  </ul>
                 </div>
               </div>
-            </form>
-            {result.length > 0 && (
-              <div>
-                <h2>Hasil Perankingan Alternatif</h2>
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th>No.</th>
-                      <th>Alternatif</th>
-                      <th>Skor</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {result.map((ranking, index) => (
-                      <tr key={index}>
-                        <td>{index + 1}</td>
-                        <td>{`Alternatif ${ranking.alternative}`}</td>
-                        <td>{ranking.score.toFixed(4)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+            </nav>
+
+            {getPageContent()}
           </div>
         );
       };
 
-      ReactDOM.createRoot(document.getElementById('root')).render(<MooraApp />);
+      ReactDOM.createRoot(document.getElementById("root")).render(<MooraApp />);
     </script>
   </body>
 </html>
