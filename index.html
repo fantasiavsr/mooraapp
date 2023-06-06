@@ -17,7 +17,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.21.1/babel.min.js"></script>
     <script type="text/babel">
-      const { useState } = React;
+      const { useEffect, useState,  } = React;
 
       const FormulaPage = () => {
         return (
@@ -155,21 +155,141 @@
         handleChangeAlternativeName,
         handleChangeParkingAvailability,
       }) => {
+        const [isMobileView, setIsMobileView] = useState(false);
+
+        useEffect(() => {
+          const handleResize = () => {
+            setIsMobileView(window.innerWidth <= 1080);
+          };
+
+          window.addEventListener("resize", handleResize);
+          handleResize();
+
+          return () => {
+            window.removeEventListener("resize", handleResize);
+          };
+        }, []);
+
         const handleValueChange = (e, alternativeIndex, criterionIndex) => {
           const { value } = e.target;
           handleChangeValue(alternativeIndex, criterionIndex, value);
         };
-      
+
         const handleAlternativeNameChange = (e, alternativeIndex) => {
           const { value } = e.target;
           handleChangeAlternativeName(alternativeIndex, value);
         };
-      
+
         const handleParkingAvailabilityChange = (e, alternativeIndex) => {
           const { value } = e.target;
           handleChangeParkingAvailability(alternativeIndex, value);
         };
-      
+
+        if (isMobileView) {
+          return (
+            <div>
+              <h2 className="mb-4">Data Alternatif</h2>
+              {alternatives.length > 0 ? (
+                <div className="accordion" id="alternativesAccordion">
+                  {alternatives.map((alternative, alternativeIndex) => (
+                    <div className="accordion-item" key={alternativeIndex}>
+                      <h2 className="accordion-header">
+                        <button
+                          className="accordion-button"
+                          type="button"
+                          data-bs-toggle="collapse"
+                          data-bs-target={`#alternativeCollapse${alternativeIndex}`}
+                        >
+                          Alternatif {alternativeIndex + 1}
+                        </button>
+                      </h2>
+                      <div
+                        id={`alternativeCollapse${alternativeIndex}`}
+                        className="accordion-collapse collapse"
+                      >
+                        <div className="accordion-body">
+                          <table className="table">
+                            <thead>
+                              <tr>
+                                <th>Kriteria</th>
+                                <th>Nilai</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td>Nama Alternatif</td>
+                                <td>
+                                  <input
+                                    type="text"
+                                    value={alternative.name}
+                                    onChange={(e) =>
+                                      handleAlternativeNameChange(
+                                        e,
+                                        alternativeIndex
+                                      )
+                                    }
+                                  />
+                                </td>
+                              </tr>
+                              {criteria.map((criterion, criterionIndex) => (
+                                <tr key={criterionIndex}>
+                                  <td>{criterion.label}</td>
+                                  {criterion.name === "ketersediaanParkir" ? (
+                                    <td>
+                                      <select
+                                        value={alternative.ketersediaanParkir}
+                                        onChange={(e) =>
+                                          handleParkingAvailabilityChange(
+                                            e,
+                                            alternativeIndex
+                                          )
+                                        }
+                                      >
+                                        <option value={1}>Ada</option>
+                                        <option value={0}>Tidak Ada</option>
+                                      </select>
+                                    </td>
+                                  ) : (
+                                    <td>
+                                      <input
+                                        type="number"
+                                        value={alternative[criterion.name]}
+                                        onChange={(e) =>
+                                          handleValueChange(
+                                            e,
+                                            alternativeIndex,
+                                            criterionIndex
+                                          )
+                                        }
+                                      />
+                                    </td>
+                                  )}
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p>
+                  Belum ada data alternatif. Silakan klik tombol "Generate
+                  Alternatif".
+                </p>
+              )}
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={handleGenerateAlternatives}
+              >
+                Generate Alternatif
+              </button>
+            </div>
+          );
+        }
+
         return (
           <div>
             <h2 className="mb-4">Data Alternatif</h2>
@@ -181,17 +301,9 @@
                     <th>Nama Alternatif</th>
                     {criteria.map((criterion, index) => {
                       if (criterion.name === "ketersediaanParkir") {
-                        return (
-                          <th key={index}>
-                            {criterion.label}
-                          </th>
-                        );
+                        return <th key={index}>{criterion.label}</th>;
                       }
-                      return (
-                        <React.Fragment key={index}>
-                          <th>{criterion.label}</th>
-                        </React.Fragment>
-                      );
+                      return <th key={index}>{criterion.label}</th>;
                     })}
                   </tr>
                 </thead>
@@ -232,7 +344,7 @@
                         );
                         const value = alternative[criterion.name];
                         const isMaxValue = value === maxValue;
-      
+
                         return (
                           <td
                             key={criterionIndex}
@@ -261,7 +373,8 @@
               </table>
             ) : (
               <p>
-                Belum ada data alternatif. Silakan klik tombol "Generate Alternatif".
+                Belum ada data alternatif. Silakan klik tombol "Generate
+                Alternatif".
               </p>
             )}
             <button
@@ -273,7 +386,7 @@
             </button>
           </div>
         );
-      };      
+      };
 
       const RankingsPage = ({ result }) => {
         return (
