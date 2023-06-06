@@ -151,7 +151,25 @@
         alternatives,
         handleGenerateAlternatives,
         criteria,
+        handleChangeValue,
+        handleChangeAlternativeName,
+        handleChangeParkingAvailability,
       }) => {
+        const handleValueChange = (e, alternativeIndex, criterionIndex) => {
+          const { value } = e.target;
+          handleChangeValue(alternativeIndex, criterionIndex, value);
+        };
+      
+        const handleAlternativeNameChange = (e, alternativeIndex) => {
+          const { value } = e.target;
+          handleChangeAlternativeName(alternativeIndex, value);
+        };
+      
+        const handleParkingAvailabilityChange = (e, alternativeIndex) => {
+          const { value } = e.target;
+          handleChangeParkingAvailability(alternativeIndex, value);
+        };
+      
         return (
           <div>
             <h2 className="mb-4">Data Alternatif</h2>
@@ -161,17 +179,54 @@
                   <tr>
                     <th>No.</th>
                     <th>Nama Alternatif</th>
-                    {criteria.map((criterion, index) => (
-                      <th key={index}>{criterion.label}</th>
-                    ))}
+                    {criteria.map((criterion, index) => {
+                      if (criterion.name === "ketersediaanParkir") {
+                        return (
+                          <th key={index}>
+                            {criterion.label}
+                          </th>
+                        );
+                      }
+                      return (
+                        <React.Fragment key={index}>
+                          <th>{criterion.label}</th>
+                        </React.Fragment>
+                      );
+                    })}
                   </tr>
                 </thead>
                 <tbody>
-                  {alternatives.map((alternative, index) => (
-                    <tr key={index}>
-                      <td>{index + 1}</td>
-                      <td>{alternative.name}</td>
-                      {criteria.map((criterion, i) => {
+                  {alternatives.map((alternative, alternativeIndex) => (
+                    <tr key={alternativeIndex}>
+                      <td>{alternativeIndex + 1}</td>
+                      <td>
+                        <input
+                          type="text"
+                          value={alternative.name}
+                          onChange={(e) =>
+                            handleAlternativeNameChange(e, alternativeIndex)
+                          }
+                        />
+                      </td>
+                      {criteria.map((criterion, criterionIndex) => {
+                        if (criterion.name === "ketersediaanParkir") {
+                          return (
+                            <td key={criterionIndex}>
+                              <select
+                                value={alternative.ketersediaanParkir}
+                                onChange={(e) =>
+                                  handleParkingAvailabilityChange(
+                                    e,
+                                    alternativeIndex
+                                  )
+                                }
+                              >
+                                <option value={1}>Ada</option>
+                                <option value={0}>Tidak Ada</option>
+                              </select>
+                            </td>
+                          );
+                        }
                         const maxValue = Math.max(
                           ...alternatives.map((alt) => alt[criterion.name])
                         );
@@ -180,20 +235,23 @@
       
                         return (
                           <td
-                            key={i}
+                            key={criterionIndex}
                             style={{
                               fontWeight: isMaxValue ? "bold" : "normal",
                             }}
                           >
-                            {criterion.name === "ketersediaanParkir" ? (
-                              value === 1 ? (
-                                <span>ada</span>
-                              ) : (
-                                <span>tidak ada</span>
-                              )
-                            ) : (
-                              value
-                            )}
+                            <input
+                              type="number"
+                              value={value}
+                              onChange={(e) =>
+                                handleValueChange(
+                                  e,
+                                  alternativeIndex,
+                                  criterionIndex
+                                )
+                              }
+                              style={{ width: "60px" }}
+                            />
                           </td>
                         );
                       })}
@@ -215,7 +273,7 @@
             </button>
           </div>
         );
-      };
+      };      
 
       const RankingsPage = ({ result }) => {
         return (
@@ -408,71 +466,107 @@
             "Superindo",
             "Carrefour",
           ];
-        
+
           const generatedAlternatives = [];
-        
+
           for (let i = 0; i < 20; i++) {
             const alternative = {};
-        
+
             alternative["lokasi"] = Math.floor(Math.random() * 10) + 1;
             alternative["jenisBarang"] = Math.floor(Math.random() * 1000) + 1;
             alternative["kualitasLayanan"] = Math.floor(Math.random() * 10) + 1;
             alternative["kebersihan"] = Math.floor(Math.random() * 10) + 1;
             alternative["keamanan"] = Math.floor(Math.random() * 10) + 1;
             alternative["ketersediaanParkir"] = Math.round(Math.random());
-            alternative["banyaknyaPembayaran"] = Math.floor(Math.random() * 10) + 1;
+            alternative["banyaknyaPembayaran"] =
+              Math.floor(Math.random() * 10) + 1;
             alternative["jarakRumah"] = Math.floor(Math.random() * 50) + 1;
-            alternative["pajakPpn"] = [1000, 1500, 2000, 2500, 3000, 3500][Math.floor(Math.random() * 6)];
-            alternative["hargaParkir"] = [1000, 2000, 3000][Math.floor(Math.random() * 3)];
-        
+            alternative["pajakPpn"] = [1000, 1500, 2000, 2500, 3000, 3500][
+              Math.floor(Math.random() * 6)
+            ];
+            alternative["hargaParkir"] = [1000, 2000, 3000][
+              Math.floor(Math.random() * 3)
+            ];
+
             const alternativeName =
-              alternativeNames[Math.floor(Math.random() * alternativeNames.length)];
+              alternativeNames[
+                Math.floor(Math.random() * alternativeNames.length)
+              ];
             let suffix = "";
             let duplicateCount = 0;
-        
+
             while (true) {
               const duplicateNames = generatedAlternatives.filter(
                 (alt) => alt.name === alternativeName + suffix
               );
-        
+
               if (duplicateNames.length === 0) {
                 if (duplicateCount === 0) {
                   alternative.name = alternativeName;
                 } else {
-                  alternative.name = alternativeName + " " + (duplicateCount + 1);
+                  alternative.name =
+                    alternativeName + " " + (duplicateCount + 1);
                 }
                 break;
               }
-        
+
               duplicateCount++;
               suffix = " " + (duplicateCount + 1);
             }
-        
+
             generatedAlternatives.push(alternative);
           }
-        
+
           return generatedAlternatives;
         }
-        
+
+        const handleChangeValue = (alternativeIndex, criterionIndex, value) => {
+          const updatedAlternatives = [...alternatives];
+          updatedAlternatives[alternativeIndex][criteria[criterionIndex].name] =
+            Number(value);
+          setAlternatives(updatedAlternatives);
+        };
+
+        const handleChangeAlternativeName = (alternativeIndex, name) => {
+          const updatedAlternatives = [...alternatives];
+          updatedAlternatives[alternativeIndex].name = name;
+          setAlternatives(updatedAlternatives);
+        };
+
+        const handleChangeParkingAvailability = (
+          alternativeIndex,
+          availability
+        ) => {
+          const updatedAlternatives = [...alternatives];
+          updatedAlternatives[alternativeIndex].ketersediaanParkir =
+            Number(availability);
+          setAlternatives(updatedAlternatives);
+        };
 
         function calculateNormalizedMatrix() {
           const normalizedMatrix = [];
 
+          // Mengiterasi setiap alternatif
           for (let i = 0; i < alternatives.length; i++) {
             const values = [];
 
+            // Mengiterasi setiap kriteria
             for (let j = 0; j < criteria.length; j++) {
               const criterion = criteria[j];
               const value = alternatives[i][criterion.name];
               values.push(value);
             }
 
+            // Menghitung sum of squares untuk normalisasi
             const sumOfSquares = values.reduce((acc, val) => acc + val ** 2, 0);
             const sqrtSumOfSquares = Math.sqrt(sumOfSquares);
+
+            // Melakukan normalisasi nilai-nilai kriteria
             const normalizedValues = values.map(
               (val) => val / sqrtSumOfSquares
             );
 
+            // Menyimpan nilai-nilai yang telah dinormalisasi ke dalam matriks
             normalizedMatrix.push(normalizedValues);
           }
 
@@ -482,19 +576,23 @@
         function calculateOptimizationValues(normalizedMatrix) {
           const optimizationValues = [];
 
+          // Mengiterasi setiap alternatif
           for (const alternative of alternatives) {
             const values = [];
 
+            // Mengiterasi setiap kriteria
             for (let i = 0; i < criteria.length; i++) {
               const criterion = criteria[i];
               const weightsValue = weights[criterion.name] || 0;
               const normalizedValues = normalizedMatrix[i];
 
+              // Menghitung nilai maksimum dan minimum dari normalisasi
               const maxValue = Math.max(...normalizedValues);
               const minValue = Math.min(...normalizedValues);
 
               let optimizationValue;
 
+              // Menggunakan rumus optimasi berdasarkan jenis kriteria (benefit atau cost)
               if (
                 criterion.name === "jarakRumah" ||
                 criterion.name === "pajakPpn" ||
@@ -509,9 +607,11 @@
                   (maxValue - minValue);
               }
 
+              // Menyimpan nilai optimasi ke dalam array
               values.push(optimizationValue);
             }
 
+            // Menyimpan array nilai optimasi untuk setiap alternatif
             optimizationValues.push(values);
           }
 
@@ -550,6 +650,11 @@
                   alternatives={alternatives}
                   handleGenerateAlternatives={handleGenerateAlternatives}
                   criteria={criteria}
+                  handleChangeValue={handleChangeValue} // Menambahkan prop handleChangeValue
+                  handleChangeAlternativeName={handleChangeAlternativeName} // Menambahkan prop handleChangeAlternativeName
+                  handleChangeParkingAvailability={
+                    handleChangeParkingAvailability
+                  } // Menambahkan prop handleChangeParkingAvailability
                 />
               );
             case "normalization":

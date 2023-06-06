@@ -20,11 +20,19 @@
       const { useState } = React;
 
       const FormulaPage = () => {
-        // return ..
+        return (
+          <div>
+            ...
+          </div>
+        );
       };
 
       const HowToPage = () => {
-        // return ..
+        return (
+          <div>
+            ...
+          </div>
+        );
       };
 
       const CriteriaPage = ({
@@ -33,7 +41,11 @@
         handleWeightChange,
         handleSubmit,
       }) => {
-        // return ..
+        return (
+          <div>
+            ...
+          </div>
+        );
       };
 
       const AlternativesPage = ({
@@ -41,19 +53,101 @@
         handleGenerateAlternatives,
         criteria,
       }) => {
-        // return ..
+        return (
+          <div>
+            <h2 className="mb-4">Data Alternatif</h2>
+            {alternatives.length > 0 ? (
+              <table className="table table-striped">
+                <thead>
+                  <tr>
+                    <th>No.</th>
+                    <th>Nama Alternatif</th>
+                    {criteria.map((criterion, index) => (
+                      <th key={index}>{criterion.label}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {alternatives.map((alternative, index) => (
+                    <tr key={index}>
+                      <td>{index + 1}</td>
+                      <td>{alternative.name}</td>
+                      {criteria.map((criterion, i) => {
+                        const maxValue = Math.max(
+                          ...alternatives.map((alt) => alt[criterion.name])
+                        );
+                        const value = alternative[criterion.name];
+                        const isMaxValue = value === maxValue;
+
+                        return (
+                          <td
+                            key={i}
+                            style={{
+                              fontWeight: isMaxValue ? "bold" : "normal",
+                            }}
+                          >
+                            {criterion.name === "ketersediaanParkir" ? (
+                              value === 1 ? (
+                                <span>ada</span>
+                              ) : (
+                                <span>tidak ada</span>
+                              )
+                            ) : (
+                              value
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p>
+                Belum ada data alternatif. Silakan klik tombol "Generate
+                Alternatif".
+              </p>
+            )}
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={handleGenerateAlternatives}
+            >
+              Generate Alternatif
+            </button>
+          </div>
+        );
       };
 
       const RankingsPage = ({ result }) => {
-        // return ..
+        return (
+          <div>
+            ...
+          </div>
+        );
+      };
+
+      const NormalizationPage = ({ normalizedMatrix }) => {
+        return (
+          <div>
+            ...
+          </div>
+        );
+      };
+
+      const OptimizationPage = ({ optimizationValues }) => {
+        return (
+          <div>
+            ...
+          </div>
+        );
       };
 
       const MooraApp = () => {
         const criteria = [
           { name: "lokasi", label: "Lokasi yang Strategis" },
           { name: "jenisBarang", label: "Jenis Barang yang Dijual" },
-          { name: "kualitasLayanan", label: "Kualitas Layanan" },
-         // etc ..
+          // ,,,
         ];
 
         const [weights, setWeights] = useState({});
@@ -69,13 +163,11 @@
         const handleSubmit = (e) => {
           e.preventDefault();
 
-          // check if alternative data is already generated
           if (alternatives.length === 0) {
             alert("Silakan generate data alternatif terlebih dahulu!");
             return;
           }
 
-          // Check if at least one weight is filled and not 0
           const areWeightsComplete = criteria.some(
             (criterion) =>
               weights[criterion.name] !== undefined &&
@@ -110,94 +202,15 @@
         };
 
         function generateAlternatives() {
-          const alternativeNames = [
-            "Alfamart",
-            "Alfamidi",
-            // etc ..
-          ];
-
-          const generatedAlternatives = [];
-
-          for (let i = 0; i < 20; i++) {
-            const alternative = {};
-
-            for (const criterion of criteria) {
-              alternative[criterion.name] = Math.random() * (0.8 - 0.2) + 0.2;
-            }
-
-            const alternativeName =
-              alternativeNames[
-                Math.floor(Math.random() * alternativeNames.length)
-              ];
-            let suffix = "";
-            let duplicateCount = 0;
-
-            while (true) {
-              const duplicateNames = generatedAlternatives.filter(
-                (alt) => alt.name === alternativeName + suffix
-              );
-
-              if (duplicateNames.length === 0) {
-                if (duplicateCount === 0) {
-                  alternative.name = alternativeName;
-                } else {
-                  alternative.name =
-                    alternativeName + " " + (duplicateCount + 1);
-                }
-                break;
-              }
-
-              duplicateCount++;
-              suffix = " " + (duplicateCount + 1);
-            }
-
-            generatedAlternatives.push(alternative);
-          }
-
-          return generatedAlternatives;
+          // ,,,
         }
 
         function calculateNormalizedMatrix() {
-          const normalizedMatrix = [];
-
-          for (const criterion of criteria) {
-            const values = alternatives.map(
-              (alternative) => alternative[criterion.name]
-            );
-            const sumOfSquares = values.reduce((acc, val) => acc + val ** 2, 0);
-            const sqrtSumOfSquares = Math.sqrt(sumOfSquares);
-            const normalizedValues = values.map(
-              (val) => val / sqrtSumOfSquares
-            );
-
-            normalizedMatrix.push(normalizedValues);
-          }
-
-          return normalizedMatrix;
+          // ,,,
         }
 
         function calculateOptimizationValues(normalizedMatrix) {
-          const optimizationValues = [];
-
-          for (const alternative of alternatives) {
-            const values = [];
-
-            for (let i = 0; i < criteria.length; i++) {
-              const criterion = criteria[i];
-              const weightsValue = weights[criterion.name] || 0;
-              const maxValue = Math.max(...normalizedMatrix[i]);
-              const minValue = Math.min(...normalizedMatrix[i]);
-
-              const optimizationValue =
-                (weightsValue * (alternative[criterion.name] - minValue)) /
-                (maxValue - minValue);
-              values.push(optimizationValue);
-            }
-
-            optimizationValues.push(values);
-          }
-
-          return optimizationValues;
+          // ,,,
         }
 
         function calculateRankings(optimizationValues) {
@@ -234,6 +247,16 @@
                   criteria={criteria}
                 />
               );
+            case "normalization":
+              const normalizedMatrix = calculateNormalizedMatrix();
+              return <NormalizationPage normalizedMatrix={normalizedMatrix} />;
+            case "optimization":
+              const optimizationValues = calculateOptimizationValues(
+                calculateNormalizedMatrix()
+              );
+              return (
+                <OptimizationPage optimizationValues={optimizationValues} />
+              );
             case "rankings":
               return <RankingsPage result={result} />;
             default:
@@ -243,10 +266,7 @@
 
         return (
           <div className="container py-5 ">
-            <nav className="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
-              <!-- nav ... -->
-            </nav>
-
+            <!-- nav -->
             {getPageContent()}
           </div>
         );
