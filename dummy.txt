@@ -16,6 +16,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.21.1/babel.min.js"></script>
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
     <script type="text/babel">
       const { useState } = React;
 
@@ -154,126 +155,163 @@
         handleChangeValue,
         handleChangeAlternativeName,
         handleChangeParkingAvailability,
+        handleDeleteAlternative,
+        setAlternatives,
       }) => {
         const handleValueChange = (e, alternativeIndex, criterionIndex) => {
           const { value } = e.target;
           handleChangeValue(alternativeIndex, criterionIndex, value);
         };
-      
+
         const handleAlternativeNameChange = (e, alternativeIndex) => {
           const { value } = e.target;
           handleChangeAlternativeName(alternativeIndex, value);
         };
-      
+
         const handleParkingAvailabilityChange = (e, alternativeIndex) => {
           const { value } = e.target;
           handleChangeParkingAvailability(alternativeIndex, value);
         };
-      
+
+        const handleDelete = (alternativeIndex) => {
+          handleDeleteAlternative(alternativeIndex);
+        };
+
+        const handleFileUpload = (e) => {
+          const file = e.target.files[0];
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            const data = new Uint8Array(event.target.result);
+            const workbook = XLSX.read(data, { type: "array" });
+
+            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+            // Ambil kolom nama alternatif dan kriteria
+            const headers = jsonData[0];
+            const alternativeIndex = headers.indexOf("Nama Alternatif");
+            const criteriaData = headers.slice(alternativeIndex + 1);
+
+            // Proses data alternatif yang diunggah
+            const uploadedAlternatives = [];
+            for (let i = 1; i < jsonData.length; i++) {
+              const row = jsonData[i];
+              const alternative = { name: row[alternativeIndex] };
+              for (let j = 0; j < criteriaData.length; j++) {
+                const criterion = criteriaData[j];
+                alternative[criterion] = row[alternativeIndex + 1 + j];
+              }
+              uploadedAlternatives.push(alternative);
+            }
+
+            // Set data alternatif yang diunggah ke state
+            setAlternatives(uploadedAlternatives);
+          };
+
+          reader.readAsArrayBuffer(file);
+        };
+
         return (
-          <div>
-            <h2 className="mb-4">Data Alternatif</h2>
-            {alternatives.length > 0 ? (
-              <table className="table table-striped table-responsive">
-                <thead>
-                  <tr>
-                    <th>No.</th>
-                    <th>Nama Alternatif</th>
-                    {criteria.map((criterion, index) => {
-                      if (criterion.name === "ketersediaanParkir") {
-                        return (
-                          <th key={index}>
-                            {criterion.label}
-                          </th>
-                        );
-                      }
-                      return (
-                        <React.Fragment key={index}>
-                          <th>{criterion.label}</th>
-                        </React.Fragment>
-                      );
-                    })}
-                  </tr>
-                </thead>
-                <tbody>
-                  {alternatives.map((alternative, alternativeIndex) => (
-                    <tr key={alternativeIndex}>
-                      <td>{alternativeIndex + 1}</td>
-                      <td>
-                        <input
-                          type="text"
-                          value={alternative.name}
-                          onChange={(e) =>
-                            handleAlternativeNameChange(e, alternativeIndex)
-                          }
-                        />
-                      </td>
-                      {criteria.map((criterion, criterionIndex) => {
-                        if (criterion.name === "ketersediaanParkir") {
-                          return (
-                            <td key={criterionIndex}>
-                              <select
-                                value={alternative.ketersediaanParkir}
-                                onChange={(e) =>
-                                  handleParkingAvailabilityChange(
-                                    e,
-                                    alternativeIndex
-                                  )
-                                }
-                              >
-                                <option value={1}>Ada</option>
-                                <option value={0}>Tidak Ada</option>
-                              </select>
-                            </td>
-                          );
+  <div>
+    <h2 className="mb-4">Data Alternatif</h2>
+
+    {alternatives.length > 0 ? (
+      <table className="table table-striped">
+        <thead>
+          <tr>
+            <th>No.</th>
+            <th>Nama Alternatif</th>
+            {criteria.map((criterion, index) => (
+              <th key={index}>Kriteria {index + 1}</th>
+            ))}
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {alternatives.map((alternative, alternativeIndex) => (
+            <tr key={alternativeIndex}>
+              <td>{alternativeIndex + 1}</td>
+              <td>
+                <input
+                  type="text"
+                  value={alternative.name}
+                  onChange={(e) =>
+                    handleAlternativeNameChange(e, alternativeIndex)
+                  }
+                />
+              </td>
+              {criteria.map((criterion, criterionIndex) => {
+                if (criterion.name === "ketersediaanParkir") {
+                  return (
+                    <td key={criterionIndex}>
+                      <input
+                        type="number"
+                        value={alternative[criterion.name] || ""}
+                        onChange={(e) =>
+                          handleValueChange(
+                            e,
+                            alternativeIndex,
+                            criterionIndex
+                          )
                         }
-                        const maxValue = Math.max(
-                          ...alternatives.map((alt) => alt[criterion.name])
-                        );
-                        const value = alternative[criterion.name];
-                        const isMaxValue = value === maxValue;
-      
-                        return (
-                          <td
-                            key={criterionIndex}
-                            style={{
-                              fontWeight: isMaxValue ? "bold" : "normal",
-                            }}
-                          >
-                            <input
-                              type="number"
-                              value={value}
-                              onChange={(e) =>
-                                handleValueChange(
-                                  e,
-                                  alternativeIndex,
-                                  criterionIndex
-                                )
-                              }
-                              style={{ width: "60px" }}
-                            />
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <p>
-                Belum ada data alternatif. Silakan klik tombol "Generate Alternatif".
-              </p>
-            )}
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={handleGenerateAlternatives}
-            >
-              Generate Alternatif
-            </button>
-          </div>
-        );
-      };      
+                        style={{ width: "60px" }}
+                      />
+                    </td>
+                  );
+                }
+                return (
+                  <td key={criterionIndex}>
+                    <input
+                      type="number"
+                      value={alternative[criterion.name] || ""}
+                      onChange={(e) =>
+                        handleValueChange(
+                          e,
+                          alternativeIndex,
+                          criterionIndex
+                        )
+                      }
+                      style={{ width: "60px" }}
+                    />
+                  </td>
+                );
+              })}
+              <td>
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  onClick={() => handleDelete(alternativeIndex)}
+                >
+                  Hapus
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    ) : (
+      <p>
+        Belum ada data alternatif. Silakan klik tombol "Generate
+        Alternatif".
+      </p>
+    )}
+    <div className="mt-3">
+      <label htmlFor="file-upload" className="mr-2">
+        Upload File Excel:
+      </label>
+      <input type="file" id="file-upload" onChange={handleFileUpload} />
+    </div>
+    <button
+      type="button"
+      className="btn btn-secondary mt-3"
+      onClick={handleGenerateAlternatives}
+    >
+      Generate Alternatif
+    </button>
+  </div>
+);
+
+      };
 
       const RankingsPage = ({ result }) => {
         return (
@@ -543,6 +581,14 @@
           setAlternatives(updatedAlternatives);
         };
 
+        const handleDeleteAlternative = (alternativeIndex) => {
+          const updatedAlternatives = alternatives.filter(
+            (_, index) => index !== alternativeIndex
+          );
+          setAlternatives(updatedAlternatives);
+          setResult([]); // Reset result when alternative is deleted
+        };
+
         function calculateNormalizedMatrix() {
           const normalizedMatrix = [];
 
@@ -557,8 +603,11 @@
               values.push(value);
             }
 
-            // Menghitung sum of squares untuk normalisasi
+            // Menghitung jumlah kuadrat dari setiap nilai kriteria
+            // fungsi reduce digunakan untuk menjumlahkan setiap nilai kriteria dengan nilai awal 0
+            // fungsi Math.pow digunakan untuk mengkuadratkan setiap nilai kriteria
             const sumOfSquares = values.reduce((acc, val) => acc + val ** 2, 0);
+            // Menghitung akar dari sum of squares
             const sqrtSumOfSquares = Math.sqrt(sumOfSquares);
 
             // Melakukan normalisasi nilai-nilai kriteria
@@ -577,12 +626,12 @@
           const optimizationValues = [];
 
           // Mengiterasi setiap alternatif
-          for (const alternative of alternatives) {
+          for (let i = 0; i < alternatives.length; i++) {
             const values = [];
 
             // Mengiterasi setiap kriteria
-            for (let i = 0; i < criteria.length; i++) {
-              const criterion = criteria[i];
+            for (let j = 0; j < criteria.length; j++) {
+              const criterion = criteria[j];
               const weightsValue = weights[criterion.name] || 0;
               const normalizedValues = normalizedMatrix[i];
 
@@ -599,11 +648,13 @@
                 criterion.name === "hargaParkir"
               ) {
                 optimizationValue =
-                  (weightsValue * (maxValue - alternative[criterion.name])) /
+                  (weightsValue *
+                    (maxValue - alternatives[i][criterion.name])) /
                   (maxValue - minValue);
               } else {
                 optimizationValue =
-                  (weightsValue * (alternative[criterion.name] - minValue)) /
+                  (weightsValue *
+                    (alternatives[i][criterion.name] - minValue)) /
                   (maxValue - minValue);
               }
 
@@ -655,6 +706,8 @@
                   handleChangeParkingAvailability={
                     handleChangeParkingAvailability
                   } // Menambahkan prop handleChangeParkingAvailability
+                  handleDeleteAlternative={handleDeleteAlternative} // Menambahkan prop handleDeleteAlternative
+                  setAlternatives={setAlternatives} // Menambahkan prop setAlternatives
                 />
               );
             case "normalization":
