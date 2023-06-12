@@ -444,6 +444,7 @@
         const [result, setResult] = useState([]);
         const [alternatives, setAlternatives] = useState([]);
         const [currentPage, setCurrentPage] = useState("alternatives");
+        //const [normalizedMatrix, setNormalizedMatrix] = useState([]);
 
         const handleWeightChange = (e) => {
           const { name, value } = e.target;
@@ -625,13 +626,15 @@
             }
             transposedMatrix.push(values);
           }
-          console.log(transposedMatrix);
-          return transposedMatrix;
           
+          return transposedMatrix;
         }
 
         function calculateOptimizationValues(normalizedMatrix) {
           const optimizationValues = [];
+        
+          // Transpose the normalized matrix
+          const transposedMatrix = transposeMatrix(normalizedMatrix);
         
           // Mengiterasi setiap kriteria
           for (let j = 0; j < criteria.length; j++) {
@@ -641,8 +644,8 @@
             // Mengiterasi setiap alternatif
             for (let i = 0; i < alternatives.length; i++) {
               const weightsValue = weights[criterion.name] || 0;
-              const normalizedValues = normalizedMatrix[j]; // Mengambil normalizedMatrix[j] untuk mendapatkan nilai normalisasi per kriteria
-              
+              const normalizedValues = transposedMatrix[j]; // Use the transposed matrix
+        
               // Menghitung nilai maksimum dan minimum dari normalisasi
               const maxValue = Math.max(...normalizedValues);
               console.log(maxValue);
@@ -657,13 +660,11 @@
                 criterion.name === "hargaParkir"
               ) {
                 optimizationValue =
-                  (weightsValue *
-                    (maxValue - alternatives[i][criterion.name])) /
+                  (weightsValue * (maxValue - normalizedMatrix[i][j])) /
                   (maxValue - minValue);
               } else {
                 optimizationValue =
-                  (weightsValue *
-                    (alternatives[i][criterion.name] - minValue)) /
+                  (weightsValue * (normalizedMatrix[i][j] - minValue)) /
                   (maxValue - minValue);
               }
         
@@ -675,11 +676,13 @@
             optimizationValues.push(values);
           }
         
-          return optimizationValues;
+          return transposeMatrix(optimizationValues); // Transpose back to original format
         }
         
+        function transposeMatrix(matrix) {
+          return matrix[0].map((col, i) => matrix.map((row) => row[i]));
+        }
         
-
         function calculateRankings(optimizationValues) {
           const rankings = optimizationValues.map((values, index) => ({
             alternative: alternatives[index].name,
