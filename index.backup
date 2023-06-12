@@ -222,7 +222,7 @@
                     <th>No.</th>
                     <th>Nama Alternatif</th>
                     {criteria.map((criterion, index) => (
-                      <th key={index}>{criterion.label}</th>
+                      <th key={index}>Kriteria {index + 1}</th>
                     ))}
                     <th></th>
                   </tr>
@@ -244,18 +244,18 @@
                         if (criterion.name === "ketersediaanParkir") {
                           return (
                             <td key={criterionIndex}>
-                              <select
-                                value={alternative.ketersediaanParkir}
+                              <input
+                                type="number"
+                                value={alternative[criterion.name] || ""}
                                 onChange={(e) =>
-                                  handleParkingAvailabilityChange(
+                                  handleValueChange(
                                     e,
-                                    alternativeIndex
+                                    alternativeIndex,
+                                    criterionIndex
                                   )
                                 }
-                              >
-                                <option value={1}>Ada</option>
-                                <option value={0}>Tidak Ada</option>
-                              </select>
+                                style={{ width: "60px" }}
+                              />
                             </td>
                           );
                         }
@@ -444,6 +444,7 @@
         const [result, setResult] = useState([]);
         const [alternatives, setAlternatives] = useState([]);
         const [currentPage, setCurrentPage] = useState("alternatives");
+        //const [normalizedMatrix, setNormalizedMatrix] = useState([]);
 
         const handleWeightChange = (e) => {
           const { name, value } = e.target;
@@ -591,20 +592,18 @@
         function calculateNormalizedMatrix() {
           const normalizedMatrix = [];
 
-          // Mengiterasi setiap alternatif
-          for (let i = 0; i < alternatives.length; i++) {
+          // Mengiterasi setiap kriteria
+          for (let j = 0; j < criteria.length; j++) {
+            const criterion = criteria[j];
             const values = [];
 
-            // Mengiterasi setiap kriteria
-            for (let j = 0; j < criteria.length; j++) {
-              const criterion = criteria[j];
+            // Mengiterasi setiap alternatif
+            for (let i = 0; i < alternatives.length; i++) {
               const value = alternatives[i][criterion.name];
               values.push(value);
             }
 
             // Menghitung jumlah kuadrat dari setiap nilai kriteria
-            // fungsi reduce digunakan untuk menjumlahkan setiap nilai kriteria dengan nilai awal 0
-            // fungsi Math.pow digunakan untuk mengkuadratkan setiap nilai kriteria
             const sumOfSquares = values.reduce((acc, val) => acc + val ** 2, 0);
             // Menghitung akar dari sum of squares
             const sqrtSumOfSquares = Math.sqrt(sumOfSquares);
@@ -618,28 +617,42 @@
             normalizedMatrix.push(normalizedValues);
           }
 
-          return normalizedMatrix;
+          // Mengubah tabel antara alternatif dan kriteria
+          const transposedMatrix = [];
+          for (let i = 0; i < alternatives.length; i++) {
+            const values = [];
+            for (let j = 0; j < criteria.length; j++) {
+              values.push(normalizedMatrix[j][i]);
+            }
+            transposedMatrix.push(values);
+          }
+          
+          return transposedMatrix;
         }
 
         function calculateOptimizationValues(normalizedMatrix) {
           const optimizationValues = [];
-
-          // Mengiterasi setiap alternatif
-          for (let i = 0; i < alternatives.length; i++) {
+        
+          // Transpose the normalized matrix
+          const transposedMatrix = transposeMatrix(normalizedMatrix);
+        
+          // Mengiterasi setiap kriteria
+          for (let j = 0; j < criteria.length; j++) {
+            const criterion = criteria[j];
             const values = [];
-
-            // Mengiterasi setiap kriteria
-            for (let j = 0; j < criteria.length; j++) {
-              const criterion = criteria[j];
+        
+            // Mengiterasi setiap alternatif
+            for (let i = 0; i < alternatives.length; i++) {
               const weightsValue = weights[criterion.name] || 0;
-              const normalizedValues = normalizedMatrix[i];
-
+              const normalizedValues = transposedMatrix[j]; // Use the transposed matrix
+        
               // Menghitung nilai maksimum dan minimum dari normalisasi
               const maxValue = Math.max(...normalizedValues);
+              console.log(maxValue);
               const minValue = Math.min(...normalizedValues);
-
+        
               let optimizationValue;
-
+        
               // Menggunakan rumus optimasi berdasarkan jenis kriteria (benefit atau cost)
               if (
                 criterion.name === "jarakRumah" ||
@@ -647,27 +660,29 @@
                 criterion.name === "hargaParkir"
               ) {
                 optimizationValue =
-                  (weightsValue *
-                    (maxValue - alternatives[i][criterion.name])) /
+                  (weightsValue * (maxValue - normalizedMatrix[i][j])) /
                   (maxValue - minValue);
               } else {
                 optimizationValue =
-                  (weightsValue *
-                    (alternatives[i][criterion.name] - minValue)) /
+                  (weightsValue * (normalizedMatrix[i][j] - minValue)) /
                   (maxValue - minValue);
               }
-
+        
               // Menyimpan nilai optimasi ke dalam array
               values.push(optimizationValue);
             }
-
-            // Menyimpan array nilai optimasi untuk setiap alternatif
+        
+            // Menyimpan array nilai optimasi untuk setiap kriteria
             optimizationValues.push(values);
           }
-
-          return optimizationValues;
+        
+          return transposeMatrix(optimizationValues); // Transpose back to original format
         }
-
+        
+        function transposeMatrix(matrix) {
+          return matrix[0].map((col, i) => matrix.map((row) => row[i]));
+        }
+        
         function calculateRankings(optimizationValues) {
           const rankings = optimizationValues.map((values, index) => ({
             alternative: alternatives[index].name,
