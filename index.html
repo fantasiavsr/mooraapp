@@ -795,9 +795,7 @@
                   <ul className="navbar-nav">
                     <li className="nav-item">
                       <button
-                        className={`nav-link btn ${
-                          currentPage === "formula" ? "active" : ""
-                        }`}
+                        className={`nav-link btn ${currentPage === "formula" ? "active" : ""}`}
                         onClick={() => handleNavigationClick("formula")}
                       >
                         Rumus Moora
@@ -805,9 +803,7 @@
                     </li>
                     <li className="nav-item">
                       <button
-                        className={`nav-link btn ${
-                          currentPage === "howto" ? "active" : ""
-                        }`}
+                        className={`nav-link btn ${currentPage === "howto" ? "active" : ""}`}
                         onClick={() => handleNavigationClick("howto")}
                       >
                         Cara Penggunaan
@@ -825,9 +821,7 @@
                     </li>
                     <li className="nav-item">
                       <button
-                        className={`nav-link btn ${
-                          currentPage === "criteria" ? "active" : ""
-                        }`}
+                        className={`nav-link btn ${currentPage === "criteria" ? "active" : ""}`}
                         onClick={() => handleNavigationClick("criteria")}
                       >
                         Bobot Kriteria
@@ -843,21 +837,21 @@
                         Normalisasi
                       </button>
                     </li>
+                    {alternatives.length > 0 && ( // Cek jika data alternatif sudah diisi
+                      <li className="nav-item">
+                        <button
+                          className={`nav-link btn ${
+                            currentPage === "optimization" ? "active" : ""
+                          }`}
+                          onClick={() => handleNavigationClick("optimization")}
+                        >
+                          Optimasi
+                        </button>
+                      </li>
+                    )}
                     <li className="nav-item">
                       <button
-                        className={`nav-link btn ${
-                          currentPage === "optimization" ? "active" : ""
-                        }`}
-                        onClick={() => handleNavigationClick("optimization")}
-                      >
-                        Optimasi
-                      </button>
-                    </li>
-                    <li className="nav-item">
-                      <button
-                        className={`nav-link btn ${
-                          currentPage === "rankings" ? "active" : ""
-                        }`}
+                        className={`nav-link btn ${currentPage === "rankings" ? "active" : ""}`}
                         onClick={() => handleNavigationClick("rankings")}
                       >
                         Hasil Ranking
@@ -865,6 +859,7 @@
                     </li>
                   </ul>
                 </div>
+                
               </div>
             </nav>
 
